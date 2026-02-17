@@ -19,21 +19,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SignUp = () => {
   const navigation = useNavigation();
 
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: '198939527050-8u1jgr3j64clcohiggmikg7mpauv8sp7.apps.googleusercontent.com',
-      offlineAccess: true,
-      forceCodeForRefreshToken: true,
-    });
-  }, []);
-
   const signInWithGoogle = async () => {
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       console.log('Google User Info:', userInfo);
 
-      // Determine where idToken is (v12+ might separate it)
       const idToken = userInfo.data?.idToken || userInfo.idToken;
 
       if (!idToken) {
@@ -41,18 +32,14 @@ const SignUp = () => {
         return;
       }
 
-      // Backend Call
       const response = await axios.post(`${BASE_URL}auth/google-login`, {
         id_token: idToken
       });
-      console.log("lllllll", idToken)
 
       if (response.data.access_token) {
         await AsyncStorage.setItem('userToken', response.data.access_token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
-
         Alert.alert('Success', 'Logged in successfully');
-        // Navigate to your main app screen
         navigation.navigate('DriverIntarnal');
       }
 

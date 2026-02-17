@@ -1,39 +1,44 @@
 {
   "project_info": {
-    "project_number": "198939527050",
-    "project_id": "travel-5b020",
-    "storage_bucket": "travel-5b020.firebasestorage.app"
+    "project_number": "1030097030757",
+    "project_id": "blabla-6af40",
+    "storage_bucket": "blabla-6af40.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:198939527050:android:7c9679d9f8fc2337d5ea73",
+        "mobilesdk_app_id": "1:1030097030757:android:387d08155f3b953ae6808c",
         "android_client_info": {
           "package_name": "com.travel_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "198939527050-8u1jgr3j64clcohiggmikg7mpauv8sp7.apps.googleusercontent.com",
+          "client_id": "1030097030757-h3p5160g87ml6jerko094npnh3uub1us.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.travel_app",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+            "certificate_hash": "8930ba9e81cee216be8cf9614765507c585c71c8"
           }
         },
         {
-          "client_id": "198939527050-mdi5u1kcjo5qgv4dc4ebhv0jeqnlkrga.apps.googleusercontent.com",
+          "client_id": "1030097030757-n2489ab83ig009n6kvfrts2m8p2grj96.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAu_u-fA-OinT41eCbAkFoQ2VUCVk6AWWU"
+          "current_key": "AIzaSyBAdArNiN1i9LKyWekRYJ07jhT7-t09bQs"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1030097030757-n2489ab83ig009n6kvfrts2m8p2grj96.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
