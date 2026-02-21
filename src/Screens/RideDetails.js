@@ -4,7 +4,6 @@ import {
     StyleSheet,
     StatusBar,
     TouchableOpacity,
-    SafeAreaView,
     Platform,
     ScrollView,
     Alert,
@@ -12,6 +11,7 @@ import {
     TextInput,
     Switch
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -315,7 +315,7 @@ const RideDetails = () => {
                 )}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
 
                 {/* Route Header Card */}
                 <View style={styles.routeCard}>
@@ -581,10 +581,10 @@ export default RideDetails;
 
 const styles = StyleSheet.create({
     safe: {
-        flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
+        flex: 1, backgroundColor: '#fff',
     },
     headerView: {
-        flexDirection: 'row', alignItems: 'center', paddingVertical: 15, marginBottom: 10,
+        flexDirection: 'row', alignItems: 'center', paddingVertical: 15, marginBottom: 10, paddingHorizontal: 20,
     },
     headerText: {
         fontSize: 20, fontWeight: '600', color: '#000', flex: 1, textAlign: 'center', marginRight: 24,

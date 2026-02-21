@@ -1,4 +1,5 @@
-import { View, Text, SafeAreaView, StyleSheet, StatusBar, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useCallback } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -105,12 +106,12 @@ const Publish = () => {
 
         <View style={styles.card}>
           <Text style={styles.cardSubtitle}>Today</Text>
-          <Text style={styles.cardAmount}>$65</Text>
+          <Text style={styles.cardAmount}> ₹ 65</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardSubtitle}>This Week</Text>
-          <Text style={styles.cardAmount}>$320</Text>
+          <Text style={styles.cardAmount}> ₹ 320</Text>
         </View>
 
       </ScrollView>

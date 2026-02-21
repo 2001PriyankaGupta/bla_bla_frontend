@@ -58,15 +58,13 @@ export default function TabNavigation({ route }) {
       />
 
       {/* Only show Publish for drivers */}
-      {userType === 'driver' && (
-        <Tab.Screen
-          name="Publish"
-          component={Publish}
-          options={{
-            tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={24} />,
-          }}
-        />
-      )}
+      <Tab.Screen
+        name="Publish"
+        component={Publish}
+        options={{
+          tabBarIcon: ({ color }) => <Icon name="plus" color={color} size={24} />,
+        }}
+      />
 
       {/* Only show on Home Screen and others (NOT on limited screens) */}
       {!showLimitedTabs && (

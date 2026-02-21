@@ -283,12 +283,10 @@ const RideBookingPage = () => {
           <Text style={styles.bottomText}>Home</Text>
         </TouchableOpacity>
 
-        {userData?.user_type === 'driver' && (
-          <TouchableOpacity onPress={() => navigation.navigate("Publish")}>
-            <Icon name="plus" size={32} color="#fff" />
-            <Text style={styles.bottomText}>Publish</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity onPress={() => navigation.navigate("Publish")}>
+          <Icon name="plus" size={32} color="#fff" />
+          <Text style={styles.bottomText}>Publish</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("YourRides")}>
           <Icon name="car" size={32} color="#fff" />

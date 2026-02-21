@@ -53,8 +53,7 @@ const SeatSelection = ({ route }) => {
   // Check both 'seats' and 'total_seats' keys
   const totalCount = rideData?.seats || rideData?.total_seats || 5;
   const pricePerSeat = rideData?.price || rideData?.price_per_seat || 0;
-  // If API provided booked_seats count, we'd use it. defaulting to 0.
-  const bookedCount = rideData?.booked_seats || 0;
+  const bookedCount = Number(rideData?.booked_seats || 0);
 
   // Generate seats
   const seats = Array.from({ length: totalCount }, (_, i) => ({
@@ -63,6 +62,8 @@ const SeatSelection = ({ route }) => {
     img: require('../asset/Image/seat.png'),
     booked: i < bookedCount
   }));
+
+  const availableSeatsCount = totalCount - bookedCount;
 
   /* ---------------- STATES ---------------- */
   const [selectedSeats, setSelectedSeats] = useState([]);

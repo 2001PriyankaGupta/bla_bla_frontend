@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -15,11 +14,13 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ImagePicker from 'react-native-image-crop-picker';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { BASE_URL, IMG_URL } from '../config/config';
 
 const Profile = () => {
@@ -213,6 +214,13 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
+      // Sign out from Google if possible
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        // Ignore if already signed out or error
+      }
+
       await AsyncStorage.clear();
       navigation.reset({
         index: 0,
@@ -225,147 +233,124 @@ const Profile = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+      <StatusBar barStyle="light-content" backgroundColor="#1A5319" />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 50 }}
+      >
 
-        {/* ================= HEADER ================= */}
+        {/* ================= MODERN HEADER ================= */}
         <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+            >
+              <Icon name="arrow-left" size={26} color="#fff" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-          >
-            <Icon name="arrow-left" size={30} color="#fff" />
-          </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Account</Text>
 
-          <Text style={styles.headerTitle}>Account</Text>
-
-          <TouchableOpacity onPress={openEditModal} style={{ position: 'absolute', right: 20, top: Platform.OS === 'android' ? 15 : 10 }}>
-            <Icon name="pencil" size={26} color="#fff" />
-          </TouchableOpacity>
+            <TouchableOpacity onPress={openEditModal} style={styles.editBtnHeader}>
+              <Icon name="account-edit-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Profile Image */}
-        <View style={styles.profileContainer}>
-          {userData?.profile_picture ? (
-            <Image
-              source={{ uri: userData.profile_picture.startsWith('http') ? userData.profile_picture : `${IMG_URL}${userData.profile_picture}` }}
-              style={styles.profileImage}
-            />
-          ) : (
-            <Image
-              source={require('../asset/Image/Profile.png')}
-              style={styles.profileImage}
-            />
-          )}
+        {/* PROFILE CARD - Floating effect */}
+        <View style={styles.profileCard}>
+          <View style={styles.imageWrapper}>
+            {userData?.profile_picture ? (
+              <Image
+                source={{ uri: userData.profile_picture.startsWith('http') ? userData.profile_picture : `${IMG_URL}${userData.profile_picture}` }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Icon name="account" size={50} color="#248907" />
+              </View>
+            )}
+            <TouchableOpacity style={styles.cameraIcon} onPress={handleImagePick}>
+              <Icon name="camera" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.profilename}>{userData ? userData.name : 'Guest User'}</Text>
+          <Text style={styles.profileEmail}>{userData?.email || 'No Email Added'}</Text>
 
-          <TouchableOpacity>
-            <Text style={styles.viewProfileText}>View Profile</Text>
-          </TouchableOpacity>
+          <View style={styles.statusBadge}>
+            <Icon name="shield-check" size={14} color="#248907" />
+            <Text style={styles.statusText}>Verified Account</Text>
+          </View>
         </View>
 
-        {/* MAIN CONTENT */}
-        <View style={styles.mainview}>
+        {/* MAIN SETTINGS LIST */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuHeader}>Personal Information</Text>
 
-          {/* Account Info Section */}
-          <Text style={styles.sectionTitle}>Account</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name</Text>
-            <Text style={styles.infoValue}>{userData ? userData.name : 'Guest User'}</Text>
+          <View style={styles.menuCard}>
+            <InfoItem icon="account-outline" label="Full Name" value={userData?.name || '—'} />
+            <View style={styles.itemDivider} />
+            <InfoItem icon="email-outline" label="Email Address" value={userData?.email || '—'} />
+            <View style={styles.itemDivider} />
+            <InfoItem icon="phone-outline" label="Phone Number" value={userData?.phone || '—'} />
+            <View style={styles.itemDivider} />
+            <InfoItem icon="gender-male-female" label="Gender" value={userData?.gender || 'Not Specified'} isLast />
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Gender</Text>
-            <Text style={styles.infoValue}>{userData?.gender || 'Not Specified'}</Text>
-          </View>
+          <Text style={styles.menuHeader}>Preferences & Actions</Text>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{userData?.email || 'Not Specified'}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>{userData?.phone || 'Not Specified'}</Text>
-          </View>
-
-          {/* Offering rides - Only for Drivers */}
-          {userData?.user_type === 'driver' && (
-            <>
-              <Text style={styles.subTitle}>Offering Rides</Text>
-
-              <TouchableOpacity
-                onPress={() => navigation.navigate('AddYourCar')}
-                style={styles.row}
-              >
-                <Text style={styles.rowText}>Add Car Details</Text>
-                <Icon name="chevron-right" size={22} color="#000" />
-              </TouchableOpacity>
-            </>
-          )}
-
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowText}>Switch Role</Text>
-              <Text style={{ fontSize: 12, color: 'gray' }}>Current: {userData?.user_type || 'Unknown'}</Text>
-            </View>
-
-            <Switch
-              value={switchRole}
-              onValueChange={handleSwitchRole}
-              trackColor={{ false: '#ccc', true: '#4caf50' }}
-              thumbColor="#fff"
+          <View style={styles.menuCard}>
+            <MenuItem
+              icon="car-info"
+              label="Car Details"
+              subLabel="Manage your vehicles"
+              onPress={() => navigation.navigate('AddYourCar')}
+            />
+            <View style={styles.itemDivider} />
+            <MenuItem
+              icon="star-face"
+              label="Ratings & Reviews"
+              subLabel="See what others say"
+              onPress={() => navigation.navigate('Review')}
+            />
+            <View style={styles.itemDivider} />
+            <MenuItem
+              icon="help-circle-outline"
+              label="Help & Support"
+              subLabel="Get assistance"
+              onPress={() => navigation.navigate('HelpSupport')}
+              isLast
             />
           </View>
 
-          {/* Ratings Section */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>Ratings & Reviews</Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Review')}
-            style={styles.row}
-          >
-            <Text style={styles.rowText}>View Ratings & Reviews</Text>
-            <Icon name="chevron-right" size={22} color="#000" />
+          {/* Logout */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Icon name="logout-variant" size={20} color="#e74c3c" />
+            <Text style={styles.logoutButtonText}>Logout from Account</Text>
           </TouchableOpacity>
 
-          {/* Help Section */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>Help And Support</Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('HelpSupport')}
-            style={styles.row}
-          >
-            <Text style={styles.rowText}>Help And Support</Text>
-            <Icon name="chevron-right" size={22} color="#000" />
-          </TouchableOpacity>
-
-          {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-
+          <Text style={styles.versionText}>Version 1.0.4 (Beta)</Text>
         </View>
 
       </ScrollView>
-      {/* Edit Profile Modal */}
+
+      {/* Edit Profile Modal (Remaining same for functionality but can be styled later if needed) */}
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Profile</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Icon name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity onPress={handleImagePick} style={styles.modalImagePicker}>
               {editImage ? (
@@ -375,41 +360,52 @@ const Profile = () => {
                   <Image source={{ uri: userData.profile_picture.startsWith('http') ? userData.profile_picture : `${IMG_URL}${userData.profile_picture}` }} style={styles.modalImage} /> :
                   <Icon name="camera" size={40} color="#ccc" />
               )}
+              <View style={styles.cameraOverlay}>
+                <Icon name="camera" size={20} color="#fff" />
+              </View>
             </TouchableOpacity>
 
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Name"
-              value={editName}
-              onChangeText={setEditName}
-            />
-
-            <View style={styles.genderContainer}>
-              <Text>Gender: </Text>
-              <TouchableOpacity onPress={() => setEditGender('male')} style={[styles.genderOption, editGender === 'male' && styles.genderSelected]}>
-                <Text style={editGender === 'male' ? { color: '#fff' } : { color: '#000' }}>Male</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setEditGender('female')} style={[styles.genderOption, editGender === 'female' && styles.genderSelected]}>
-                <Text style={editGender === 'female' ? { color: '#fff' } : { color: '#000' }}>Female</Text>
-              </TouchableOpacity>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Display Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Full Name"
+                value={editName}
+                onChangeText={setEditName}
+              />
             </View>
 
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Phone"
-              value={editPhone}
-              onChangeText={setEditPhone}
-              keyboardType="phone-pad"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.modalBtn, styles.cancelBtn]}>
-                <Text style={styles.btnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleUpdateProfile} style={[styles.modalBtn, styles.saveBtn]}>
-                <Text style={styles.btnText}>Save</Text>
-              </TouchableOpacity>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Gender</Text>
+              <View style={styles.genderContainer}>
+                {['male', 'female', 'other'].map((g) => (
+                  <TouchableOpacity
+                    key={g}
+                    onPress={() => setEditGender(g)}
+                    style={[styles.genderOption, editGender === g && styles.genderSelected]}
+                  >
+                    <Text style={[styles.genderText, editGender === g && { color: '#fff' }]}>
+                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Phone Number</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Phone Number"
+                value={editPhone}
+                onChangeText={setEditPhone}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <TouchableOpacity onPress={handleUpdateProfile} style={styles.saveBtn}>
+              <Text style={styles.saveBtnText}>Save Changes</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -418,227 +414,369 @@ const Profile = () => {
   );
 };
 
+// --- Reusable Components ---
+const InfoItem = ({ icon, label, value, isLast }) => (
+  <View style={styles.infoItem}>
+    <View style={styles.infoIconBox}>
+      <Icon name={icon} size={20} color="#248907" />
+    </View>
+    <View style={styles.infoTextBox}>
+      <Text style={styles.infoTitle}>{label}</Text>
+      <Text style={styles.infoDesc}>{value}</Text>
+    </View>
+  </View>
+);
+
+const MenuItem = ({ icon, label, subLabel, onPress, isLast }) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+    <View style={[styles.infoIconBox, { backgroundColor: '#F1F8E9' }]}>
+      <Icon name={icon} size={22} color="#248907" />
+    </View>
+    <View style={styles.infoTextBox}>
+      <Text style={styles.menuItemLabel}>{label}</Text>
+      <Text style={styles.menuItemSub}>{subLabel}</Text>
+    </View>
+    <Icon name="chevron-right" size={24} color="#BDC3C7" />
+  </TouchableOpacity>
+);
+
 export default Profile;
 
-/* ================= STYLES ================= */
+/* ================= PREVENTATIVE STYLES ================= */
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop:
-      Platform.OS === 'android' ? StatusBar.currentHeight + 5 : 0,
+    backgroundColor: '#F8F9FA',
   },
 
-  /* HEADER */
+  /* MODERN HEADER */
   header: {
-    height: 150,
     backgroundColor: '#248907',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    height: 180,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
+    elevation: 8,
+    shadowColor: '#248907',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
-
-  backBtn: {
-    position: 'absolute',
-    left: 20,
-    top: Platform.OS === 'android' ? 15 : 10,
-  },
-
-  headerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-    alignSelf: 'center',
-    marginBottom: 30,
-  },
-
-  /* PROFILE IMAGE */
-  profileContainer: {
+  headerTop: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: -40,
-  },
-
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-
-  profilename: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
     marginTop: 10,
   },
-
-  viewProfileText: {
-    color: '#248907',
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 5,
-  },
-
-  /* MAIN CONTENT */
-  mainview: {
-    padding: 15,
-  },
-
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
-    marginTop: 20,
-  },
-
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    borderBottomWidth: 0.8,
-    borderColor: '#e5e5e5',
-  },
-
-  infoLabel: {
-    fontSize: 16,
-    color: '#000',
-  },
-
-  infoValue: {
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
-  },
-
-  subTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 25,
-    color: '#000',
-  },
-
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 18,
-    borderBottomWidth: 0.7,
-    borderColor: '#e5e5e5',
-  },
-
-  rowText: {
-    fontSize: 16,
-    color: '#000',
-  },
-
-  sectionHeader: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    marginTop: 18,
-  },
-
-  sectionHeaderText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#444',
-  },
-
-  logoutBtn: {
-    backgroundColor: '#b60000',
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 30,
-    alignItems: 'center',
-  },
-
-  logoutText: {
+  headerTitle: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtnHeader: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  /* MODAL STYLES */
+  /* PROFILE CARD */
+  profileCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: -80,
+    borderRadius: 25,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginBottom: 15,
+  },
+  profileImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
+    borderColor: '#fff',
+  },
+  imagePlaceholder: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#F1F8E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: '#fff',
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: '#248907',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  profilename: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#2C3E50',
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginTop: 4,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  statusText: {
+    color: '#248907',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 5,
+  },
+
+  /* SETTINGS SECTIONS */
+  menuSection: {
+    paddingHorizontal: 20,
+    marginTop: 30,
+  },
+  menuHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#7F8C8D',
+    marginBottom: 15,
+    marginLeft: 5,
+  },
+  menuCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    marginBottom: 25,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#F5F6F7',
+  },
+
+  /* INFO ITEM */
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+  },
+  infoIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F1F8E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  infoTextBox: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 12,
+    color: '#95A5A6',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoDesc: {
+    fontSize: 15,
+    color: '#2C3E50',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+
+  /* MENU ITEM */
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+  },
+  menuItemLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2C3E50',
+  },
+  menuItemSub: {
+    fontSize: 13,
+    color: '#95A5A6',
+    marginTop: 2,
+  },
+
+  /* LOGOUT */
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FDEDEC',
+    paddingVertical: 16,
+    borderRadius: 18,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#FADBD8',
+  },
+  logoutButtonText: {
+    color: '#e74c3c',
+    fontSize: 16,
+    fontWeight: '800',
+    marginLeft: 10,
+  },
+  versionText: {
+    textAlign: 'center',
+    color: '#BDC3C7',
+    fontSize: 12,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+
+  /* MODAL MODERN STYLES */
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 20,
-    elevation: 5,
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+    padding: 25,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 15,
-    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#2C3E50',
   },
   modalImagePicker: {
     alignSelf: 'center',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f0f0f0',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F5F6F7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
     overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 2,
+    borderColor: '#F1F8E9',
   },
   modalImage: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#7F8C8D',
+    marginBottom: 8,
+    marginLeft: 5,
   },
   modalInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 15,
+    padding: 15,
     fontSize: 16,
-    color: '#000',
+    color: '#2C3E50',
+    fontWeight: '600',
+    borderWidth: 1,
+    borderColor: '#EBEDEF',
   },
   genderContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
+    gap: 10,
   },
   genderOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
-    marginLeft: 10,
+    borderColor: '#EBEDEF',
   },
   genderSelected: {
     backgroundColor: '#248907',
     borderColor: '#248907',
   },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalBtn: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  cancelBtn: {
-    backgroundColor: '#999',
+  genderText: {
+    fontWeight: '700',
+    color: '#7F8C8D',
   },
   saveBtn: {
     backgroundColor: '#248907',
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginTop: 10,
+    elevation: 5,
+    shadowColor: '#248907',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  btnText: {
+  saveBtnText: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '800',
   },
 });

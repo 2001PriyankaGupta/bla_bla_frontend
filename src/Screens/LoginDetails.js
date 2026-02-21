@@ -1,11 +1,14 @@
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -14,11 +17,55 @@ import { BASE_URL } from '../config/config';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+
 const LoginDetails = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const navigation = useNavigation();
+
+  const signInWithGoogle = async () => {
+    try {
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) { }
+
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+
+      if (!idToken) {
+        Alert.alert('Error', 'Could not retrieve ID Token');
+        return;
+      }
+
+      const response = await axios.post(`${BASE_URL}auth/google-login`, {
+        id_token: idToken
+      });
+
+      if (response.data.status === "true" || response.data.access_token) {
+        const { access_token, user } = response.data;
+        if (access_token) await AsyncStorage.setItem('access_token', access_token);
+        if (user) {
+          await AsyncStorage.setItem('user_data', JSON.stringify(user));
+          if (user.id) await AsyncStorage.setItem('user_id', user.id.toString());
+        }
+
+        Alert.alert('Success', 'Login Successful!', [
+          { text: 'OK', onPress: () => navigation.navigate('RideBookingPage') }
+        ]);
+      } else {
+        Alert.alert('Error', response.data.message || 'Login failed');
+      }
+    } catch (error) {
+      if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
+        console.error('Google Sign-In Error:', error);
+        const errorMsg = error.response?.data?.message || error.message || 'Something went wrong';
+        Alert.alert('Error', errorMsg);
+      }
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -77,60 +124,80 @@ const LoginDetails = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Email Input */}
-      <View style={styles.inputBox}>
-        <Icon name="email-outline" size={22} color="#000" />
-        <TextInput
-          placeholder="Email/ Mobile No"
-          placeholderTextColor="#777"
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-      </View>
-
-      {/* Password Input */}
-      <View style={styles.inputBox}>
-        <Icon name="lock-outline" size={22} color="#000" />
-
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="#777"
-          secureTextEntry={!showPassword}
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <TouchableOpacity
-          onPress={() => setShowPassword(!showPassword)}
-          style={{ paddingHorizontal: 5 }}
-        >
-          <Icon
-            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-            size={22}
-            color="#000"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center' }}
+      >
+        {/* Email Input */}
+        <View style={styles.inputBox}>
+          <Icon name="email-outline" size={22} color="#000" />
+          <TextInput
+            placeholder="Email/ Mobile No"
+            placeholderTextColor="#777"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
+        </View>
+
+        {/* Password Input */}
+        <View style={styles.inputBox}>
+          <Icon name="lock-outline" size={22} color="#000" />
+
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor="#777"
+            secureTextEntry={!showPassword}
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={{ paddingHorizontal: 5 }}
+          >
+            <Icon
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color="#000"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 20 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={{ color: '#248907', fontWeight: 'bold' }}>Forgot Password?</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Next Button */}
+        <TouchableOpacity style={styles.nextButton} onPress={handleLogin}>
+          <Text style={styles.nextText}>Login</Text>
         </TouchableOpacity>
-      </View>
 
-      <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 20 }}>
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={{ color: '#248907', fontWeight: 'bold' }}>Forgot Password?</Text>
+        <View style={styles.orRow}>
+          <View style={styles.line} />
+          <Text style={styles.orText}>Or</Text>
+          <View style={styles.line} />
+        </View>
+
+        <View style={styles.socialRow}>
+          <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
+            <Image source={require('../asset/Image/google.png')} style={styles.socialIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialBtn}>
+            <Image source={require('../asset/Image/apple.png')} style={styles.socialIcon} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Cancel */}
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Next Button */}
-      <TouchableOpacity style={styles.nextButton} onPress={handleLogin}>
-        <Text style={styles.nextText}>Login</Text>
-      </TouchableOpacity>
-
-      {/* Cancel */}
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.cancelText}>Cancel</Text>
-      </TouchableOpacity>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -142,9 +209,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 30,
-    paddingTop: 50,
     alignItems: 'center',
-    alignContent: 'center',
     justifyContent: 'center',
   },
 
@@ -189,5 +254,39 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#000',
     textAlign: 'center',
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    width: '100%',
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#dcdcdc',
+  },
+  orText: {
+    marginHorizontal: 10,
+    color: '#777',
+    fontSize: 16,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 20,
+  },
+  socialBtn: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#dcdcdc',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+  },
+  socialIcon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
   },
 });

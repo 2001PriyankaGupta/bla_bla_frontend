@@ -22,7 +22,7 @@
 > Task :app:signingReport
 Variant: debug
 Config: debug
-Store: C:\wamp64\www\Main\Travel_App\android\app\debug.keystore
+Store: D:\react-native\Full-bla-bla-new\Travel_App\android\app\debug.keystore
 Alias: androiddebugkey
 MD5: 20:F4:61:48:B7:2D:8E:5E:5C:A2:3D:37:A4:F4:14:90
 SHA1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25
@@ -31,7 +31,7 @@ Valid until: Wednesday, May 1, 2052
 ----------
 Variant: release
 Config: debug
-Store: C:\wamp64\www\Main\Travel_App\android\app\debug.keystore
+Store: D:\react-native\Full-bla-bla-new\Travel_App\android\app\debug.keystore
 Alias: androiddebugkey
 MD5: 20:F4:61:48:B7:2D:8E:5E:5C:A2:3D:37:A4:F4:14:90
 SHA1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25
@@ -40,7 +40,7 @@ Valid until: Wednesday, May 1, 2052
 ----------
 Variant: debugOptimized
 Config: debug
-Store: C:\wamp64\www\Main\Travel_App\android\app\debug.keystore
+Store: D:\react-native\Full-bla-bla-new\Travel_App\android\app\debug.keystore
 Alias: androiddebugkey
 MD5: 20:F4:61:48:B7:2D:8E:5E:5C:A2:3D:37:A4:F4:14:90
 SHA1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25
@@ -49,7 +49,7 @@ Valid until: Wednesday, May 1, 2052
 ----------
 Variant: debugAndroidTest
 Config: debug
-Store: C:\wamp64\www\Main\Travel_App\android\app\debug.keystore
+Store: D:\react-native\Full-bla-bla-new\Travel_App\android\app\debug.keystore
 Alias: androiddebugkey
 MD5: 20:F4:61:48:B7:2D:8E:5E:5C:A2:3D:37:A4:F4:14:90
 SHA1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25

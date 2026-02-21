@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { BASE_URL } from '../config/config';
@@ -81,17 +81,23 @@ const Home = ({ route }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Helper to shorten long address (e.g., "Connaught Place, New Delhi..." -> "Connaught Place")
+  const shortLocation = (address) => {
+    if (!address) return '';
+    return address.split(',')[0].trim();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle='dark-content' backgroundColor="#248907" />
+      <StatusBar barStyle='light-content' backgroundColor="#248907" />
 
       {/* Header */}
       <View style={styles.header}>
 
         <View style={styles.locationRow}>
           <View style={styles.locationBox}>
-            <Text style={styles.locationText}>
-              {searchCriteria.from ? `${searchCriteria.from} → ${searchCriteria.to}` : 'Select a route'}
+            <Text style={styles.locationText} numberOfLines={2}>
+              {searchCriteria.from ? `${shortLocation(searchCriteria.from)} → ${shortLocation(searchCriteria.to)}` : 'Select a route'}
             </Text>
           </View>
 
@@ -100,7 +106,7 @@ const Home = ({ route }) => {
             style={styles.bellButton}
             onPress={() => navigation.navigate('Inbox')}
           >
-            <Icon name="bell-outline" size={30} color="#248907" />
+            <Icon name="bell-outline" size={28} color="#248907" />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -111,11 +117,11 @@ const Home = ({ route }) => {
 
         {/* Filter Row */}
         <View style={styles.filterBox}>
-          <Text style={styles.filterText}>
-            {searchCriteria.departing ? `${searchCriteria.departing}, ${searchCriteria.passengers} Passenger` : 'Today, 1 Passenger'}
+          <Text style={styles.filterText} numberOfLines={1}>
+            {searchCriteria.departing ? `${searchCriteria.departing} • ${searchCriteria.passengers} Pass.` : 'Today • 1 Pass.'}
           </Text>
           <TouchableOpacity style={styles.filterButton}>
-            <Icon name="filter-variant" size={20} color="#248907" />
+            <Icon name="filter-variant" size={18} color="#248907" />
             <Text style={styles.filterButtonText}>Filter</Text>
           </TouchableOpacity>
         </View>
@@ -131,33 +137,77 @@ const Home = ({ route }) => {
         <Text style={styles.sectionTitle}>Available Rides</Text>
 
         {rides.length > 0 ? (
-          rides.map((ride) => (
-            <View key={ride.id} style={styles.rideCard}>
-              <View style={styles.rideTopRow}>
-                <Text style={styles.time}>{formatTime(ride.date_time)}</Text>
-                <Text style={styles.price}>₹{ride.price_per_seat}</Text>
-              </View>
+          rides.map((ride) => {
+            const totalSeats = ride.total_seats || 0;
+            const bookedSeats = ride.booked_seats ?? 0;
+            const availableSeats = ride.available_seats ?? (totalSeats - bookedSeats);
+            const fillPercent = totalSeats > 0 ? (bookedSeats / totalSeats) * 100 : 0;
 
-              <Text style={styles.route}>{ride.pickup_point} → {ride.drop_point}</Text>
-              <Text style={styles.seats}>{ride.total_seats} Seats Available</Text>
+            const seatBarColor = availableSeats === 0 ? '#e74c3c'
+              : availableSeats <= 1 ? '#e67e22'
+                : '#27ae60';
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
-                <Text style={{ fontSize: 12, color: '#555' }}>Car: {ride.car?.car_make} {ride.car?.car_model}</Text>
-              </View>
-
+            return (
               <TouchableOpacity
+                key={ride.id}
+                style={styles.rideCard}
                 onPress={() => navigation.navigate('Prefrance', { rideData: ride })}
-                style={styles.detailsButton}
               >
-                <Text style={styles.detailsText}>More Details</Text>
+                <View style={styles.rideTopRow}>
+                  <View style={styles.timeTag}>
+                    <Icon name="clock-outline" size={14} color="#248907" />
+                    <Text style={styles.timeText}>{formatTime(ride.date_time)}</Text>
+                  </View>
+                  <Text style={styles.priceText}>₹{ride.price_per_seat}</Text>
+                </View>
+
+                <Text style={styles.routeText} numberOfLines={2}>
+                  {shortLocation(ride.pickup_point)} → {shortLocation(ride.drop_point)}
+                </Text>
+
+                <View style={styles.carInfoRow}>
+                  <Icon name="car-outline" size={14} color="#666" />
+                  <Text style={styles.carText}> {ride.car?.car_make} {ride.car?.car_model}</Text>
+                </View>
+
+                {/* ── Seat Visualization ── */}
+                <View style={styles.seatContainer}>
+                  <View style={styles.seatPillRow}>
+                    <View style={[styles.seatStatPill, { backgroundColor: '#f0f4ff' }]}>
+                      <Text style={[styles.seatNum, { color: '#2c3e50' }]}>{totalSeats}</Text>
+                      <Text style={styles.seatLabel}>Total</Text>
+                    </View>
+                    <View style={[styles.seatStatPill, { backgroundColor: '#fff3e0' }]}>
+                      <Text style={[styles.seatNum, { color: '#e67e22' }]}>{bookedSeats}</Text>
+                      <Text style={styles.seatLabel}>Booked</Text>
+                    </View>
+                    <View style={[styles.seatStatPill, { backgroundColor: availableSeats === 0 ? '#ffebee' : '#e8f5e9' }]}>
+                      <Text style={[styles.seatNum, { color: seatBarColor }]}>{availableSeats}</Text>
+                      <Text style={styles.seatLabel}>Available</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${fillPercent}%`, backgroundColor: seatBarColor }]} />
+                  </View>
+                  <Text style={[styles.progressCaption, { color: seatBarColor }]}>
+                    {availableSeats === 0 ? 'Full' : `${availableSeats} seat${availableSeats !== 1 ? 's' : ''} left`}
+                  </Text>
+                </View>
+
+                <View style={styles.detailsButton}>
+                  <Text style={styles.detailsText}>View Details</Text>
+                  <Icon name="chevron-right" size={18} color="#fff" />
+                </View>
               </TouchableOpacity>
-            </View>
-          ))
+            );
+          })
         ) : (
-          <View style={{ alignItems: 'center', marginTop: 50 }}>
-            <Text style={{ fontSize: 16, color: '#777' }}>No rides found.</Text>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-              <Text style={{ color: '#248907', fontWeight: '600' }}>Go Back to Search</Text>
+          <View style={styles.emptyState}>
+            <Icon name="car-search" size={60} color="#ccc" />
+            <Text style={styles.emptyMessage}>No rides found.</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButtonUnderEmpty}>
+              <Text style={styles.backButtonTextUnderEmpty}>Go Back to Search</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -173,58 +223,73 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
 
   /* HEADER */
   header: {
     backgroundColor: '#248907',
-    paddingVertical: 15,
     paddingHorizontal: 15,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    height: 150,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
   },
 
   locationRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 15,
   },
 
   locationBox: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    padding: 12,
     marginRight: 10,
+    minHeight: 50,
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
 
   locationText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
+    lineHeight: 20,
   },
 
   bellButton: {
     backgroundColor: '#fff',
-    width: 45,
-    height: 45,
-    borderRadius: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
 
   badge: {
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: 'red',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    backgroundColor: '#e74c3c',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -234,7 +299,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 
   /* FILTER */
@@ -242,99 +307,229 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
 
   filterText: {
     backgroundColor: '#fff',
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
     color: '#333',
-    fontWeight: '500',
+    fontWeight: '600',
     flex: 1,
     marginRight: 10,
+    fontSize: 13,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
 
   filterButton: {
     backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
 
   filterButtonText: {
     color: '#248907',
-    fontWeight: '600',
-    marginLeft: 5,
+    fontWeight: '700',
+    marginLeft: 6,
+    fontSize: 13,
   },
 
   /* LIST */
   scroll: {
+    flex: 1,
     paddingHorizontal: 15,
-    paddingTop: 10,
   },
 
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 20,
+    marginBottom: 15,
+    color: '#1a1a1a',
   },
 
   rideCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 15,
+    padding: 18,
     marginBottom: 15,
-    elevation: 3,
+    elevation: 4,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
 
   rideTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
 
-  time: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+  timeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
 
-  price: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
-  },
-
-  route: {
+  timeText: {
     fontSize: 14,
-    marginTop: 5,
-    color: '#555',
+    fontWeight: '700',
+    color: '#248907',
+    marginLeft: 5,
   },
 
-  seats: {
-    fontSize: 13,
+  priceText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1a1a1a',
+  },
+
+  routeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+
+  carInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+
+  carText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+
+  /* SEAT VISUALIZATION */
+  seatContainer: {
+    backgroundColor: '#fafafa',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    marginBottom: 15,
+  },
+
+  seatPillRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+
+  seatStatPill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+
+  seatNum: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  seatLabel: {
+    fontSize: 9,
     color: '#777',
-    marginVertical: 5,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginTop: 1,
   },
 
+  progressBarBg: {
+    height: 6,
+    backgroundColor: '#eee',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  progressCaption: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 6,
+    textAlign: 'right',
+  },
+
+  /* DETAILS BUTTON */
   detailsButton: {
     backgroundColor: '#248907',
-    borderRadius: 8,
-    paddingVertical: 10,
+    borderRadius: 10,
+    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#248907',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
 
   detailsText: {
     color: '#fff',
+    fontWeight: '800',
+    fontSize: 15,
+    marginRight: 5,
+  },
+
+  /* EMPTY STATE */
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 60,
+    paddingHorizontal: 40,
+  },
+
+  emptyMessage: {
+    fontSize: 16,
+    color: '#999',
     fontWeight: '600',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+
+  backButtonUnderEmpty: {
+    marginTop: 25,
+    backgroundColor: '#e8f5e9',
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+
+  backButtonTextUnderEmpty: {
+    color: '#248907',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

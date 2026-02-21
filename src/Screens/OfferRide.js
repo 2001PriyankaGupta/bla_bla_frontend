@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   ScrollView,
   Switch,
@@ -14,6 +13,7 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -207,51 +207,130 @@ const OfferRide = () => {
     });
   };
 
-  const renderRideItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.rideCard}
-      onPress={() => navigation.navigate('RideDetails', { rideId: item.id })}
-    >
-      <View style={styles.rideCardHeader}>
-        <View style={styles.routeContainer}>
-          <Text style={styles.routeText}>{item.pickup_point}</Text>
-          <Icon name="arrow-right" size={20} color="#777" style={{ marginHorizontal: 10 }} />
-          <Text style={styles.routeText}>{item.drop_point}</Text>
-        </View>
-        <Text style={styles.priceText}>₹{item.price_per_seat}</Text>
-      </View>
+  // Helper: grab first meaningful part of a long address
+  const shortLocation = (address) => {
+    if (!address) return '—';
+    // Take text before first comma (usually city/area name)
+    const parts = address.split(',');
+    return parts[0].trim();
+  };
 
-      <View style={styles.rideDetailsRow}>
-        <View style={styles.detailItem}>
-          <Icon name="calendar-clock" size={18} color="#248907" />
-          <Text style={styles.detailText}>{formatDateTime(item.date_time)}</Text>
-        </View>
-      </View>
+  const renderRideItem = ({ item }) => {
+    const totalSeats = item.total_seats || 0;
+    const bookedSeats = item.booked_seats ?? 0;
+    const availableSeats = item.available_seats ?? (totalSeats - bookedSeats);
+    const fillPercent = totalSeats > 0 ? (bookedSeats / totalSeats) * 100 : 0;
 
-      <View style={styles.rideDetailsRow}>
-        <View style={styles.detailItem}>
-          <Icon name="car-seat" size={18} color="#555" />
-          <Text style={styles.detailText}>{item.total_seats} Seats</Text>
+    const seatBarColor = availableSeats === 0 ? '#e74c3c'
+      : availableSeats <= 1 ? '#e67e22'
+        : '#27ae60';
+
+    return (
+      <TouchableOpacity
+        style={styles.rideCard}
+        onPress={() => navigation.navigate('RideDetails', { rideId: item.id })}
+      >
+        {/* ── Price badge (top-right) ── */}
+        <View style={styles.priceBadge}>
+          <Text style={styles.priceBadgeText}>₹{item.price_per_seat}</Text>
+          <Text style={styles.perSeatText}>/seat</Text>
         </View>
 
-        {item.car && (
-          <View style={[styles.detailItem, { marginLeft: 15 }]}>
-            <Icon name="car" size={18} color="#555" />
-            <Text style={styles.detailText}>
-              {item.car.car_make} {item.car.car_model}
+        {/* ── Route: From → To (truncated) ── */}
+        <View style={styles.routeRow}>
+          {/* FROM */}
+          <View style={styles.routePoint}>
+            <Icon name="map-marker" size={16} color="#248907" />
+            <Text style={styles.routeLabel} numberOfLines={1}>
+              {shortLocation(item.pickup_point)}
             </Text>
           </View>
-        )}
-      </View>
 
-      {item.luggage_allowed && (
-        <View style={styles.carRow}>
-          <Icon name="bag-suitcase" size={16} color="#248907" />
-          <Text style={[styles.carText, { marginLeft: 5 }]}>Luggage Allowed</Text>
+          {/* Arrow */}
+          <Icon name="arrow-right-thin" size={22} color="#bbb" style={{ marginHorizontal: 6 }} />
+
+          {/* TO */}
+          <View style={styles.routePoint}>
+            <Icon name="map-marker-check" size={16} color="#e74c3c" />
+            <Text style={styles.routeLabel} numberOfLines={1}>
+              {shortLocation(item.drop_point)}
+            </Text>
+          </View>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+
+        {/* ── Full address (small, 1 line each) ── */}
+        <Text style={styles.fullAddr} numberOfLines={1}>
+          {item.pickup_point}
+        </Text>
+        <View style={styles.arrowDivider}>
+          <Icon name="arrow-down" size={12} color="#ccc" />
+        </View>
+        <Text style={styles.fullAddr} numberOfLines={1}>
+          {item.drop_point}
+        </Text>
+
+        <View style={styles.divider} />
+
+        {/* ── Date + Car ── */}
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <Icon name="calendar-clock" size={15} color="#248907" />
+            <Text style={styles.metaText}>{formatDateTime(item.date_time)}</Text>
+          </View>
+          {item.car && (
+            <View style={styles.metaItem}>
+              <Icon name="car" size={15} color="#555" />
+              <Text style={styles.metaText}>{item.car.car_make} {item.car.car_model}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ── Seat Stats ── */}
+        <View style={styles.seatBox}>
+          {/* 3 stat pills */}
+          <View style={styles.seatStatRow}>
+            <View style={[styles.seatPill, { backgroundColor: '#f0f4ff' }]}>
+              <Icon name="car-seat" size={14} color="#2c3e50" />
+              <Text style={[styles.seatPillNum, { color: '#2c3e50' }]}>{totalSeats}</Text>
+              <Text style={styles.seatPillLabel}>Total</Text>
+            </View>
+
+            <View style={[styles.seatPill, { backgroundColor: '#fff3e0' }]}>
+              <Icon name="account-check" size={14} color="#e67e22" />
+              <Text style={[styles.seatPillNum, { color: '#e67e22' }]}>{bookedSeats}</Text>
+              <Text style={styles.seatPillLabel}>Booked</Text>
+            </View>
+
+            <View style={[styles.seatPill, { backgroundColor: availableSeats === 0 ? '#ffebee' : '#e8f5e9' }]}>
+              <Icon name="seat-passenger" size={14} color={seatBarColor} />
+              <Text style={[styles.seatPillNum, { color: seatBarColor }]}>{availableSeats}</Text>
+              <Text style={styles.seatPillLabel}>Available</Text>
+            </View>
+          </View>
+
+          {/* Visual fill bar */}
+          <View style={styles.seatBarBg}>
+            <View style={[styles.seatBarFill, { width: `${fillPercent}%`, backgroundColor: seatBarColor }]} />
+          </View>
+          <Text style={[styles.seatBarCaption, { color: seatBarColor }]}>
+            {availableSeats === 0
+              ? 'Fully Booked'
+              : `${availableSeats} seat${availableSeats !== 1 ? 's' : ''} still available`}
+          </Text>
+        </View>
+
+        {/* ── Luggage ── */}
+        {item.luggage_allowed && (
+          <View style={styles.luggageRow}>
+            <Icon name="bag-suitcase-outline" size={14} color="#248907" />
+            <Text style={styles.luggageText}>Luggage Allowed</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -415,46 +494,65 @@ const OfferRide = () => {
                 />
               </View>
 
+              {/* ── Verified Cars Only Label ── */}
               <Text style={styles.label}>Select Car</Text>
+              {/* Info: only verified cars shown */}
+              {userCars.length > 0 && userCars.filter(c => c.license_verified === 'verified').length === 0 && (
+                <View style={styles.noVerifiedBanner}>
+                  <Icon name="shield-alert-outline" size={26} color="#e67e22" />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.noVerifiedTitle}>Car Not Verified Yet</Text>
+                    <Text style={styles.noVerifiedSub}>
+                      Your car and driving license have not been verified by the admin yet.
+                      You will be able to offer rides only after your car's license is approved.{"\n\n"}
+                      Please wait for admin verification or contact support for assistance.
+                    </Text>
+                  </View>
+                </View>
+              )}
 
-              <TouchableOpacity
-                style={styles.dropdownButton}
-                onPress={() => setShowCarDropdown(!showCarDropdown)}
-              >
-                <Text style={styles.dropdownButtonText}>
-                  {selectedCarId
-                    ? userCars.find(c => c.id === selectedCarId)?.car_make + ' ' + userCars.find(c => c.id === selectedCarId)?.car_model
-                    : "Select Your Car"}
-                </Text>
-                <Icon name={showCarDropdown ? "chevron-up" : "chevron-down"} size={24} color="#555" />
-              </TouchableOpacity>
+
+              {/* Only show dropdown if at least one verified car exists */}
+              {userCars.filter(c => c.license_verified === 'verified').length > 0 && (
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setShowCarDropdown(!showCarDropdown)}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {selectedCarId
+                      ? userCars.find(c => c.id === selectedCarId)?.car_make + ' ' + userCars.find(c => c.id === selectedCarId)?.car_model
+                      : 'Select Verified Car'}
+                  </Text>
+                  <Icon name={showCarDropdown ? 'chevron-up' : 'chevron-down'} size={24} color="#555" />
+                </TouchableOpacity>
+              )}
 
               {showCarDropdown && (
                 <View style={styles.dropdownList}>
-                  {userCars.length > 0 ? (
-                    userCars.map((car) => (
-                      <TouchableOpacity
-                        key={car.id}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setSelectedCarId(car.id);
-                          setShowCarDropdown(false);
-                        }}
-                      >
-                        <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
+                  {/* ONLY admin-verified cars shown — unverified cars completely hidden */}
+                  {userCars.filter(c => c.license_verified === 'verified').map((car) => (
+                    <TouchableOpacity
+                      key={car.id}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setSelectedCarId(car.id);
+                        setShowCarDropdown(false);
+                      }}
+                    >
+                      <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
+                      <View style={{ flex: 1 }}>
                         <Text style={styles.dropdownItemText}>
                           {car.car_make} {car.car_model} ({car.licence_plate})
                         </Text>
-                        {selectedCarId === car.id && (
-                          <Icon name="check" size={20} color="#248907" style={{ marginLeft: 'auto' }} />
-                        )}
-                      </TouchableOpacity>
-                    ))
-                  ) : (
-                    <TouchableOpacity onPress={() => navigation.navigate('AddYourCar')} style={styles.dropdownItem}>
-                      <Text style={[styles.dropdownItemText, { color: '#248907' }]}>+ Add a New Car</Text>
+                        <View style={styles.badgeVerified}>
+                          <Text style={styles.verBadgeText}>Verified</Text>
+                        </View>
+                      </View>
+                      {selectedCarId === car.id && (
+                        <Icon name="check" size={20} color="#248907" />
+                      )}
                     </TouchableOpacity>
-                  )}
+                  ))}
                 </View>
               )}
 
@@ -485,7 +583,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 5 : 0,
   },
   header: {
     backgroundColor: '#248907',
@@ -593,37 +690,163 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
-    marginHorizontal: 5, // Add horizontal margin to prevent cutting off shadows on sides
+    marginHorizontal: 5,
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
-  rideCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  // ── Price badge (absolute top-right) ──
+  priceBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#e8f5e9',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: 'center',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
-    paddingBottom: 8,
   },
-  routeContainer: {
+  priceBadgeText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#248907',
+  },
+  perSeatText: {
+    fontSize: 9,
+    color: '#555',
+    fontWeight: '500',
+  },
+
+  // ── Route row (short names) ──
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    marginRight: 80,      // leave space for price badge
+  },
+  routePoint: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    flexWrap: 'wrap', // Allow wrapping for long location names
+    overflow: 'hidden',
   },
-  routeText: {
-    fontSize: 16,
+  routeLabel: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#333',
-    flexShrink: 1, // Prevent text overflow
+    color: '#1a1a1a',
+    marginLeft: 4,
+    flexShrink: 1,
   },
+
+  // ── Full address (small) ──
+  fullAddr: {
+    fontSize: 11,
+    color: '#aaa',
+    marginLeft: 4,
+    marginBottom: 1,
+  },
+  arrowDivider: {
+    marginLeft: 4,
+    marginVertical: 1,
+  },
+
+  // ── Divider ──
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 10,
+  },
+
+  // ── Meta row (date + car) ──
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#555',
+    marginLeft: 5,
+    fontWeight: '500',
+  },
+
+  // ── Seat Box ──
+  seatBox: {
+    backgroundColor: '#fafafa',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  seatStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  seatPill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginHorizontal: 3,
+  },
+  seatPillNum: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  seatPillLabel: {
+    fontSize: 9,
+    color: '#888',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  seatBarBg: {
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  seatBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  seatBarCaption: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+
+  // ── Luggage ──
+  luggageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  luggageText: {
+    fontSize: 12,
+    color: '#248907',
+    marginLeft: 5,
+    fontWeight: '500',
+  },
+
+  // ── OLD styles kept for form area compatibility ──
   priceText: {
     fontSize: 18,
     fontWeight: '700',
     color: '#248907',
     marginLeft: 10,
   },
+
   // Selection Styles
   label: {
     fontWeight: '700',
@@ -721,6 +944,42 @@ const styles = StyleSheet.create({
   addFirstBtnText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  // No verified cars banner
+  noVerifiedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff8e1',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e67e22',
+  },
+  noVerifiedTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#c0392b',
+    marginBottom: 4,
+  },
+  noVerifiedSub: {
+    fontSize: 12,
+    color: '#7f6000',
+    lineHeight: 18,
+  },
+  // Verification badge (verified only)
+  badgeVerified: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 20,
+    marginTop: 3,
+    backgroundColor: '#e8f5e9',
+  },
+  verBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#1fa000',
   },
   // Suggestion Styles
   suggestionsContainer: {

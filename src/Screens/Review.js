@@ -10,7 +10,6 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
-  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,67 +31,65 @@ const Review = () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('access_token');
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      let userType = 'passenger'; // Default
 
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        userType = userData.user_type || 'passenger';
-      }
-
-      console.log("Fetching reviews for role:", userType);
-
-      // Endpoint based on user role
-      // If I am a driver, I want to see reviews ABOUT me (as a driver) -> my-driver-reviews
-      // If I am a passenger, I want to see reviews ABOUT me (as a passenger) -> my-passenger-reviews
-      const endpoint = userType === 'driver' ? 'my-driver-reviews' : 'my-passenger-reviews';
-
-      const response = await axios.get(`${BASE_URL}reviews/${endpoint}`, {
+      // NEW independent endpoint — no more user_type check
+      const response = await axios.get(`${BASE_URL}reviews/my-reviews`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      console.log(`Reviews Response:`, response.data);
+      console.log('My Reviews Response:', response.data);
 
       if (response.data.success) {
-        setReviews(response.data.reviews.data || []);
+        setReviews(response.data.reviews?.data || []);
         setStats(response.data.stats);
       } else {
-        // Handle error or empty
         setReviews([]);
         setStats(null);
       }
     } catch (error) {
-      console.error("Fetch Reviews Error:", error);
-      // Alert.alert("Error", "Failed to fetch reviews");
+      console.error('Fetch Reviews Error:', error?.response?.data || error.message);
+      setReviews([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
   };
 
   const getRatingSummary = () => {
-    // If stats are available, use them. Otherwise default.
-    if (!stats || !stats.rating_breakdown) return [
-      { star: 5, percent: 0 },
-      { star: 4, percent: 0 },
-      { star: 3, percent: 0 },
-      { star: 2, percent: 0 },
-      { star: 1, percent: 0 },
-    ];
-
-    // Calculate percentages
-    const breakdown = stats.rating_breakdown; // { "5_star": 10, ... }
-    const total = stats.total_reviews || 1; // avoid divide by zero
-
-    return [
-      { star: 5, percent: Math.round(((breakdown['5_star'] || 0) / total) * 100) },
-      { star: 4, percent: Math.round(((breakdown['4_star'] || 0) / total) * 100) },
-      { star: 3, percent: Math.round(((breakdown['3_star'] || 0) / total) * 100) },
-      { star: 2, percent: Math.round(((breakdown['2_star'] || 0) / total) * 100) },
-      { star: 1, percent: Math.round(((breakdown['1_star'] || 0) / total) * 100) },
-    ];
+    if (!stats || !stats.rating_breakdown) {
+      return [5, 4, 3, 2, 1].map(s => ({ star: s, count: 0, percent: 0 }));
+    }
+    const breakdown = stats.rating_breakdown;
+    const total = stats.total_reviews || 1;
+    return [5, 4, 3, 2, 1].map(star => ({
+      star,
+      count: breakdown[`${star}_star`] || 0,
+      percent: Math.round(((breakdown[`${star}_star`] || 0) / total) * 100),
+    }));
   };
 
   const ratingSummary = getRatingSummary();
+  const avgRating = parseFloat(stats?.average_rating || 0).toFixed(1);
+  const totalReviews = stats?.total_reviews || 0;
+
+  const getStarColor = (rating) => {
+    if (rating >= 4) return '#27ae60';
+    if (rating >= 3) return '#f39c12';
+    return '#e74c3c';
+  };
+
+  const getReviewerImage = (imgPath) => {
+    if (!imgPath) return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    return imgPath.startsWith('http') ? imgPath : `${IMG_URL}${imgPath}`;
+  };
+
+  const getBadgeLabel = (type) => {
+    return type === 'driver' ? 'As Ride Creator' : 'As Ride Booker';
+  };
+
+  const getBadgeStyle = (type) => {
+    return type === 'driver' ? styles.badgeCreator : styles.badgeBooker;
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -100,300 +97,394 @@ const Review = () => {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
-
           <Text style={styles.headerText}>My Reviews</Text>
-
           <View style={{ width: 24 }} />
         </View>
 
-        {/* Removed Segment Buttons */}
-
         {loading ? (
-          <View style={{ padding: 50 }}>
+          <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#1fa000" />
+            <Text style={styles.loadingText}>Loading reviews...</Text>
           </View>
         ) : (
           <>
-            {/* Rating Section */}
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingValue}>{stats?.average_rating || '0.0'}</Text>
+            {/* ── Rating Summary Card ── */}
+            <View style={styles.ratingCard}>
+              {/* Left: big number */}
+              <View style={styles.ratingLeft}>
+                <Text style={[styles.bigRating, { color: getStarColor(parseFloat(avgRating)) }]}>
+                  {avgRating}
+                </Text>
+                <View style={styles.starRow}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Icon
+                      key={i}
+                      name={i <= Math.round(parseFloat(avgRating)) ? 'star' : 'star-outline'}
+                      size={18}
+                      color="#f39c12"
+                    />
+                  ))}
+                </View>
+                <Text style={styles.totalText}>{totalReviews} reviews</Text>
+              </View>
 
-              <View style={styles.starRow}>
-                {/* Render stars based on average? Just static for now or calculate */}
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Icon key={i} name={i < Math.round(stats?.average_rating || 0) ? "star" : "star-outline"} size={20} color="#1fa000" />
+              {/* Right: breakdown bars */}
+              <View style={styles.ratingRight}>
+                {ratingSummary.map(item => (
+                  <View key={item.star} style={styles.barRow}>
+                    <Text style={styles.barLabel}>{item.star}</Text>
+                    <Icon name="star" size={12} color="#f39c12" style={{ marginRight: 5 }} />
+                    <View style={styles.barBg}>
+                      <View style={[styles.barFill, { width: `${item.percent}%` }]} />
+                    </View>
+                    <Text style={styles.barCount}>{item.count}</Text>
+                  </View>
                 ))}
               </View>
-
-              <Text style={styles.reviewCount}>{stats?.total_reviews || 0} reviews</Text>
-
-              {ratingSummary.map((item, i) => (
-                <View key={i} style={styles.ratingRow}>
-                  <Text style={styles.ratingLabel}>{item.star}</Text>
-
-                  <View style={styles.ratingBarBackground}>
-                    <View style={[styles.ratingBarFill, { width: `${item.percent}%` }]} />
-                  </View>
-
-                  <Text style={styles.ratingPercent}>{item.percent}%</Text>
-                </View>
-              ))}
             </View>
 
-            {/* Reviews List */}
+            {/* ── Info Banner ── */}
+            <View style={styles.infoBanner}>
+              <Icon name="information-outline" size={16} color="#1fa000" />
+              <Text style={styles.infoText}>
+                These are reviews received from others — for rides you created or booked.
+              </Text>
+            </View>
+
+            {/* ── Reviews List ── */}
             {reviews.length === 0 ? (
-              <View style={{ alignItems: 'center', marginTop: 40 }}>
-                <Text style={{ color: '#777' }}>No reviews yet.</Text>
+              <View style={styles.emptyBox}>
+                <Icon name="comment-search-outline" size={64} color="#ddd" />
+                <Text style={styles.emptyTitle}>No Reviews Yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Complete rides to receive reviews from others.
+                </Text>
               </View>
             ) : (
-              reviews.map((item) => {
-                // Determine who reviewed
-                let reviewerObj = item.reviewer;
+              reviews.map((item) => (
+                <View style={styles.reviewCard} key={item.id}>
 
-                if (item.type === 'driver') {
-                  // If I was reviewed as a driver, the reviewer is the passenger
-                  reviewerObj = item.passenger || item.reviewer;
-                } else if (item.type === 'passenger') {
-                  // If I was reviewed as a passenger, the reviewer is the driver
-                  reviewerObj = item.driver || item.reviewer;
-                }
-
-                const reviewerName = reviewerObj?.name || 'Unknown User';
-                let reviewerImage = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-
-                if (reviewerObj?.profile_picture) {
-                  reviewerImage = reviewerObj.profile_picture.startsWith('http')
-                    ? reviewerObj.profile_picture
-                    : `${IMG_URL}${reviewerObj.profile_picture}`;
-                }
-
-                return (
-                  <View style={styles.reviewCard} key={item.id}>
-                    <View style={styles.reviewHeader}>
-                      <Image source={{ uri: reviewerImage }} style={styles.avatar} />
-
-                      <View>
-                        <Text style={styles.reviewerName}>{reviewerName}</Text>
-                        <Text style={styles.reviewTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
-                      </View>
+                  {/* Card Top: Reviewer Info + Badge */}
+                  <View style={styles.reviewTop}>
+                    <Image
+                      source={{ uri: getReviewerImage(item.reviewer_image) }}
+                      style={styles.avatar}
+                    />
+                    <View style={styles.reviewerInfo}>
+                      <Text style={styles.reviewerName}>{item.reviewer_name}</Text>
+                      <Text style={styles.reviewDate}>
+                        {new Date(item.created_at).toLocaleDateString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric'
+                        })}
+                      </Text>
                     </View>
-
-                    <View style={styles.starRow}>
-                      {Array.from({ length: item.rating }).map((_, i) => (
-                        <Icon key={i} name="star" size={18} color="#1fa000" />
-                      ))}
+                    {/* Role Badge */}
+                    <View style={[styles.badge, getBadgeStyle(item.type)]}>
+                      <Icon
+                        name={item.type === 'driver' ? 'steering' : 'seat-passenger'}
+                        size={11}
+                        color="#fff"
+                        style={{ marginRight: 3 }}
+                      />
+                      <Text style={styles.badgeText}>{getBadgeLabel(item.type)}</Text>
                     </View>
-
-                    <Text style={styles.reviewText}>{item.comment}</Text>
-
-                    {/* Likes/Dislikes - Backend doesn't support yet, keeping UI hidden or static */}
-                    {/* 
-                            <View style={styles.actionRow}>
-                            <View style={styles.actionBtn}>
-                                <Icon name="thumb-up-outline" size={18} color="#333" />
-                                <Text style={styles.actionCount}>{item.likes || 0}</Text>
-                            </View>
-                            </View>
-                            */}
                   </View>
-                );
-              })
+
+                  {/* Stars */}
+                  <View style={[styles.starRow, { marginVertical: 8 }]}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Icon
+                        key={i}
+                        name={i <= item.rating ? 'star' : 'star-outline'}
+                        size={20}
+                        color="#f39c12"
+                        style={{ marginRight: 2 }}
+                      />
+                    ))}
+                    <Text style={styles.ratingNum}>{item.rating}.0</Text>
+                  </View>
+
+                  {/* Comment */}
+                  {item.comment ? (
+                    <Text style={styles.commentText}>"{item.comment}"</Text>
+                  ) : (
+                    <Text style={styles.noComment}>No comment left.</Text>
+                  )}
+
+                  {/* Ride Route */}
+                  {item.ride_route && item.ride_route.trim() !== '→' && (
+                    <View style={styles.routeRow}>
+                      <Icon name="map-marker-path" size={14} color="#1fa000" />
+                      <Text style={styles.routeText} numberOfLines={1}>
+                        {item.ride_route}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))
             )}
+
+            <View style={{ height: 40 }} />
           </>
         )}
-
-        <View style={{ height: 40 }} />
-
       </ScrollView>
     </SafeAreaView>
   );
 };
-// ... rest of styles (keep them same)
-// I will keep the styles block below but ensure it matches
-// Just replacing lines 1-152 is safer if I keep styles
-
 
 export default Review;
 
 const styles = StyleSheet.create({
-  /* -------- SAFE AREA FIX -------- */
   safe: {
     flex: 1,
-    backgroundColor: '#fff', // Changed to white for a cleaner look behind the header curve
+    backgroundColor: '#f5f7fa',
   },
-
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa', // Light gray background for content
+    backgroundColor: '#f5f7fa',
+  },
+  loadingBox: {
+    alignItems: 'center',
+    marginTop: 80,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#999',
+    fontSize: 14,
   },
 
-  /* Header - Premium Curved Look */
+  /* Header */
   header: {
     backgroundColor: '#1fa000',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 14 : 20,
     paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    zIndex: 1,
+    elevation: 6,
   },
-
   headerText: {
     fontSize: 20,
     color: '#fff',
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 
-  /* Rating Summary Card - Floating Effect */
-  ratingContainer: {
+  /* Rating Summary Card */
+  ratingCard: {
     backgroundColor: '#fff',
-    marginTop: 20,
-    marginHorizontal: 20,
-    borderRadius: 16,
+    margin: 16,
+    borderRadius: 18,
     padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 4,
-    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-
-  ratingValue: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#333',
-    includeFontPadding: false,
+  ratingLeft: {
+    alignItems: 'center',
+    marginRight: 20,
+    minWidth: 80,
   },
-
+  bigRating: {
+    fontSize: 56,
+    fontWeight: '900',
+    lineHeight: 62,
+  },
   starRow: {
     flexDirection: 'row',
-    marginVertical: 4,
+    marginTop: 4,
   },
-
-  reviewCount: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
+  totalText: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
     fontWeight: '500',
   },
-
-  ratingRow: {
+  ratingRight: {
+    flex: 1,
+  },
+  barRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    width: '100%',
+    marginBottom: 5,
   },
-
-  ratingLabel: {
-    width: 30,
-    fontSize: 14,
+  barLabel: {
+    width: 14,
+    fontSize: 12,
     color: '#555',
-    fontWeight: '600',
+    fontWeight: '700',
+    textAlign: 'right',
+    marginRight: 3,
   },
-
-  ratingBarBackground: {
+  barBg: {
     flex: 1,
-    height: 8,
+    height: 7,
     backgroundColor: '#f0f0f0',
     borderRadius: 4,
-    marginHorizontal: 12,
+    marginHorizontal: 6,
     overflow: 'hidden',
   },
-
-  ratingBarFill: {
+  barFill: {
     height: '100%',
     backgroundColor: '#1fa000',
     borderRadius: 4,
   },
-
-  ratingPercent: {
-    width: 35,
+  barCount: {
+    width: 20,
+    fontSize: 11,
+    color: '#999',
     textAlign: 'right',
+  },
+
+  /* Info Banner */
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#e8f5e9',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#1fa000',
+  },
+  infoText: {
+    flex: 1,
     fontSize: 12,
-    color: '#888',
+    color: '#2d6a2f',
+    marginLeft: 8,
+    lineHeight: 18,
     fontWeight: '500',
   },
 
-  /* Review List */
+  /* Empty State */
+  emptyBox: {
+    alignItems: 'center',
+    marginTop: 60,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#444',
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  /* Review Card */
   reviewCard: {
     backgroundColor: '#fff',
-    padding: 20,
-    marginBottom: 16,
-    marginHorizontal: 20,
+    marginHorizontal: 16,
+    marginBottom: 14,
     borderRadius: 16,
+    padding: 18,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
-
-  reviewHeader: {
+  reviewTop: {
     flexDirection: 'row',
-    marginBottom: 12,
     alignItems: 'center',
   },
-
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 15,
-    backgroundColor: '#eee', // Placeholder bg
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#eee',
+    marginRight: 12,
   },
-
+  reviewerInfo: {
+    flex: 1,
+  },
   reviewerName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#222',
+    color: '#1a1a1a',
   },
-
-  reviewTime: {
-    fontSize: 12,
-    color: '#999',
+  reviewDate: {
+    fontSize: 11,
+    color: '#aaa',
     marginTop: 2,
   },
 
-  reviewText: {
-    fontSize: 15,
-    marginTop: 8,
-    lineHeight: 22,
-    color: '#444',
-  },
-
-  actionRow: {
-    flexDirection: 'row',
-    marginTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#f5f5f5',
-    paddingTop: 10,
-  },
-
-  actionBtn: {
+  /* Role Badge */
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeCreator: {
+    backgroundColor: '#1fa000',
+  },
+  badgeBooker: {
+    backgroundColor: '#2980b9',
+  },
+  badgeText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 
-  actionCount: {
-    marginLeft: 6,
+  /* Stars & Rating */
+  ratingNum: {
     fontSize: 13,
-    color: '#666',
+    color: '#888',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+
+  /* Comment */
+  commentText: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    marginBottom: 10,
+  },
+  noComment: {
+    fontSize: 13,
+    color: '#bbb',
+    fontStyle: 'italic',
+    marginBottom: 10,
+  },
+
+  /* Route */
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  routeText: {
+    fontSize: 12,
+    color: '#555',
+    marginLeft: 6,
+    flex: 1,
     fontWeight: '500',
   },
 });

@@ -5,14 +5,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   ScrollView,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -23,24 +24,20 @@ const YourRides = () => {
   const [activeTab, setActiveTab] = useState('Upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [userType, setUserType] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  // Use useFocusEffect to refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchBookings();
-      fetchUserType();
+      fetchUserId();
     }, [])
   );
 
-  const fetchUserType = async () => {
+  const fetchUserId = async () => {
     try {
       const userDataStr = await AsyncStorage.getItem('user_data');
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
-        setUserType(userData.user_type);
         setUserId(userData.id);
       }
     } catch (e) {
@@ -53,87 +50,130 @@ const YourRides = () => {
     try {
       const token = await AsyncStorage.getItem('access_token');
       const response = await axios.get(`${BASE_URL}my-bookings`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       console.log('Bookings Response:', response.data);
       if (response.data.status === true) {
         const fetchedBookings = response.data.data.bookings || [];
-        // DEBUG: Check for driver_id in booking list
-        if (fetchedBookings.length > 0) {
-          console.log('Sample Booking Item (Look for driver_id):', JSON.stringify(fetchedBookings[0], null, 2));
-        }
         setBookings(fetchedBookings);
-      } else {
-        // Alert.alert("Error", "Failed to fetch bookings"); 
       }
     } catch (error) {
-      console.error("Fetch Bookings Error:", error);
+      console.error('Fetch Bookings Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = async (bookingId) => {
+  // userType: 'driver' ya 'passenger'
+  const handleCancel = async (bookingId, userType) => {
+    const isDriver = userType === 'driver';
     Alert.alert(
-      "Cancel Ride",
-      "Are you sure you want to cancel this ride?",
+      isDriver ? 'Reject Booking' : 'Cancel Ride',
+      isDriver
+        ? 'Are you sure you want to reject/cancel this booking?'
+        : 'Are you sure you want to cancel this ride?',
       [
-        { text: "No", style: "cancel" },
+        { text: 'No', style: 'cancel' },
         {
-          text: "Yes", onPress: async () => {
+          text: 'Yes',
+          onPress: async () => {
             try {
               const token = await AsyncStorage.getItem('access_token');
-              // Endpoint: /api/booking/1/cancel
-              const response = await axios.post(`${BASE_URL}booking/${bookingId}/cancel`, {}, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-
-              if (response.data.status === true || response.status === 200) {
-                Alert.alert("Success", "Ride cancelled successfully.");
-                fetchBookings(); // Refresh list
+              let response;
+              if (isDriver) {
+                // Driver: use status API with 'rejected'
+                response = await axios.post(
+                  `${BASE_URL}booking/${bookingId}/status`,
+                  { status: 'rejected', rejection_reason: 'Cancelled by driver' },
+                  { headers: { 'Authorization': `Bearer ${token}` } }
+                );
               } else {
-                Alert.alert("Error", response.data.message || "Failed to cancel ride.");
+                // Passenger: use cancel API
+                response = await axios.post(
+                  `${BASE_URL}booking/${bookingId}/cancel`,
+                  {},
+                  { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+              }
+              if (response.data.status === true || response.status === 200) {
+                Alert.alert('Success', isDriver ? 'Booking rejected successfully.' : 'Ride cancelled successfully.');
+                fetchBookings();
+              } else {
+                Alert.alert('Error', response.data.message || 'Failed to cancel.');
               }
             } catch (error) {
-              console.error("Cancel Error:", error);
-              Alert.alert("Error", "Could not cancel ride.");
+              console.error('Cancel Error:', error?.response?.data || error);
+              Alert.alert('Error', 'Could not cancel. Please try again.');
             }
           }
         }
       ]
+    );
+  };
+
+  const handleReduceSeats = async (bookingId, currentSeats) => {
+    if (currentSeats <= 1) {
+      Alert.alert('Info', 'You only have 1 seat booked. Use "Cancel" to remove the booking entirely.');
+      return;
+    }
+
+    Alert.alert(
+      'Reduce Seats',
+      `You currently have ${currentSeats} seats booked.\nSelect how many seats you want to KEEP:`,
+      Array.from({ length: currentSeats - 1 }, (_, i) => {
+        const keepCount = i + 1;
+        const cancelCount = currentSeats - keepCount;
+        return {
+          text: `${keepCount} Seat${keepCount === 1 ? '' : 's'} (Cancel ${cancelCount})`,
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('access_token');
+              // Updated URL to match new backend route /booking/reduce-seats/{id}
+              const response = await axios.post(`${BASE_URL}booking/reduce-seats/${bookingId}`, { new_seats: keepCount }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+
+              if (response.data.status === true) {
+                Alert.alert('Success', `Booking updated. You now have ${keepCount} seat(s).`);
+                fetchBookings();
+              } else {
+                Alert.alert('Error', response.data.message || 'Failed to update seats.');
+              }
+            } catch (error) {
+              console.error('Reduce Error Details:', error?.response?.data || error.message);
+              const errMsg = error?.response?.data?.message || 'Could not reduce seats. Please try again.';
+              Alert.alert('Update Failed', errMsg);
+            }
+          }
+        };
+      }).concat([{ text: 'Cancel', style: 'cancel' }])
     );
   };
 
   const handleConfirm = async (bookingId) => {
     Alert.alert(
-      "Confirm Ride",
-      "Are you sure you want to confirm this booking?",
+      'Confirm Booking',
+      'Are you sure you want to confirm this booking?',
       [
-        { text: "No", style: "cancel" },
+        { text: 'No', style: 'cancel' },
         {
-          text: "Yes", onPress: async () => {
+          text: 'Yes',
+          onPress: async () => {
             try {
               const token = await AsyncStorage.getItem('access_token');
-              // Endpoint: /api/booking/1/status (Driver only)
-              // Assuming payload needed, usually status: 'confirmed'. 
-              // Based on prompt: http://.../api/booking/1/status (Driver krega)
-              // It's likely a POST or PUT to update status.
               const response = await axios.post(`${BASE_URL}booking/${bookingId}/status`, { status: 'confirmed' }, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
-
               if (response.data.status === true || response.status === 200) {
-                Alert.alert("Success", "Ride confirmed successfully.");
-                fetchBookings(); // Refresh list
+                Alert.alert('Success', 'Booking confirmed.');
+                fetchBookings();
               } else {
-                Alert.alert("Error", response.data.message || "Failed to confirm ride.");
+                Alert.alert('Error', response.data.message || 'Failed to confirm.');
               }
             } catch (error) {
-              console.error("Confirm Error:", error);
-              Alert.alert("Error", "Could not confirm ride.");
+              console.error('Confirm Error:', error);
+              Alert.alert('Error', 'Could not confirm booking.');
             }
           }
         }
@@ -141,10 +181,122 @@ const YourRides = () => {
     );
   };
 
+  const handleMarkComplete = async (bookingId) => {
+    Alert.alert(
+      'Complete Ride',
+      'Are you sure you want to mark this ride as completed?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('access_token');
+              const response = await axios.post(`${BASE_URL}booking/${bookingId}/status`, { status: 'completed' }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (response.data.status === true || response.status === 200) {
+                Alert.alert('Success', 'Ride marked as completed.');
+                fetchBookings();
+              } else {
+                Alert.alert('Error', response.data.message || 'Failed to update status.');
+              }
+            } catch (error) {
+              console.error('Complete Error:', error);
+              Alert.alert('Error', 'Could not complete ride.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  /**
+   * Get the "other person" in this booking
+   * - If I am the one who BOOKED (user_id = me) → other person is ride creator
+   * - If I am the one who CREATED ride (ride.user_id = me) → other person is the booker
+   */
+  const getOtherPerson = (item) => {
+    // user_type: 'driver' = maine ride create ki, 'passenger' = maine ride book ki
+    const isIAmCreator = item.user_type === 'driver';
+
+    if (isIAmCreator) {
+      // Maine ride create ki → other person is the booker/passenger
+      return {
+        id: item.user_id || item.passenger_id,
+        name: item.passenger_name || item.user?.name || 'Passenger',
+        image: item.user?.profile_picture || null,
+        phone: item.passenger_phone || item.user?.phone || null,
+        role: 'Passenger',
+      };
+    } else {
+      // Maine ride book ki → other person is the driver/creator
+      return {
+        id: item.ride?.car?.user?.id || item.driver_id,
+        name: item.driver_details?.driver_name || item.ride?.car?.user?.name || 'Driver',
+        image: item.ride?.car?.user?.profile_picture || null,
+        phone: item.driver_details?.driver_phone || item.ride?.car?.user?.phone || null,
+        role: 'Driver',
+      };
+    }
+  };
+
+  const handleCall = (phone, name) => {
+    if (!phone) {
+      Alert.alert('Not Available', `${name}'s phone number is not available.`);
+      return;
+    }
+    const url = `tel:${phone}`;
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Call not supported on this device.');
+      }
+    });
+  };
+
+  const handleMessage = (item, otherPerson) => {
+    const rideId = item.ride_id || item.ride?.id;
+    if (!rideId || !otherPerson?.id) {
+      Alert.alert('Error', 'Cannot open chat. Missing ride or user info.');
+      return;
+    }
+
+    let otherPersonImage = null;
+    if (otherPerson.image) {
+      otherPersonImage = otherPerson.image.startsWith('http')
+        ? otherPerson.image
+        : `${IMG_URL}${otherPerson.image}`;
+    }
+
+    navigation.navigate('ChatScreen', {
+      rideId: rideId,
+      receiverId: otherPerson.id,
+      driverName: otherPerson.name,
+      driverImage: otherPersonImage,
+    });
+  };
+
+  /**
+   * For Review: who do we review?
+   * - If I booked the ride → I review the creator (type: 'driver')
+   * - If I created the ride → I review the booker (type: 'passenger')
+   */
+  const handleRate = (item) => {
+    const isIAmCreator = item.user_type === 'driver';
+
+    navigation.navigate('AddReviewScreen', {
+      bookingId: item.id,
+      targetRole: isIAmCreator ? 'passenger' : 'driver',
+      driverId: item.ride?.car?.user?.id || item.driver_id,
+      userId: item.user_id,
+    });
+  };
+
   const getFilteredBookings = () => {
     return bookings.filter(item => {
       const status = item.status?.toLowerCase();
-      // Upcoming now includes both pending and confirmed
       if (activeTab === 'Upcoming') return status === 'pending' || status === 'confirmed';
       if (activeTab === 'Completed') return status === 'completed';
       if (activeTab === 'Cancelled') return status === 'cancelled';
@@ -153,6 +305,26 @@ const YourRides = () => {
   };
 
   const filteredBookings = getFilteredBookings();
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return '#1fa000';
+      case 'confirmed': return '#2980b9';
+      case 'pending': return '#e67e22';
+      case 'cancelled': return '#e74c3c';
+      default: return '#888';
+    }
+  };
+
+  const getCarImage = (item) => {
+    const carPhoto = item.car_details?.car_photo
+      || item.ride?.car_details?.car_photo
+      || item.ride_details?.car_details?.car_photo;
+    if (carPhoto) {
+      return { uri: carPhoto.startsWith('http') ? carPhoto : `${IMG_URL}${carPhoto}` };
+    }
+    return require('../asset/Image/Rides.png');
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -163,10 +335,8 @@ const YourRides = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={28} color="#fff" />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>My Rides</Text>
-
-        <View style={{ width: 20 }} />
+        <View style={{ width: 28 }} />
       </View>
 
       {/* Tabs */}
@@ -177,12 +347,7 @@ const YourRides = () => {
             style={[styles.tabButton, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === tab && styles.activeTabText,
-              ]}
-            >
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
               {tab}
             </Text>
           </TouchableOpacity>
@@ -191,112 +356,156 @@ const YourRides = () => {
 
       {/* Content */}
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#248907" />
         </View>
       ) : (
-        <ScrollView style={{ padding: 15 }} contentContainerStyle={{ paddingBottom: 20 }}>
+        <ScrollView style={{ flex: 1, padding: 15 }} contentContainerStyle={{ paddingBottom: 30 }}>
           {filteredBookings.length === 0 ? (
-            <View style={{ alignItems: 'center', marginTop: 50 }}>
-              <Text style={{ color: '#777', fontSize: 16 }}>No {activeTab} rides found.</Text>
+            <View style={styles.emptyBox}>
+              <Icon name="car-off" size={64} color="#ddd" />
+              <Text style={styles.emptyText}>No {activeTab} rides found.</Text>
             </View>
           ) : (
-            filteredBookings.map((item, index) => (
-              <View key={index} style={[styles.rideCard, { flexDirection: 'column' }]}>
-                {/* Top Row: Info + Image */}
-                <View style={{ flexDirection: 'row' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.timeText}>
-                      {item.booking_date}
-                    </Text>
+            filteredBookings.map((item, index) => {
+              const otherPerson = getOtherPerson(item);
+              const isCompleted = item.status?.toLowerCase() === 'completed';
+              const isUpcoming = item.status?.toLowerCase() === 'pending' || item.status?.toLowerCase() === 'confirmed';
+              // user_type: 'driver' = ride creator, 'passenger' = ride booker
+              const isIAmCreator = item.user_type === 'driver';
 
-                    {/* Location fallback */}
-                    <Text style={styles.titleText}>
-                      {item.location || item.destination ? `${item.location || ''} -> ${item.destination || ''}` : `Booking #${item.reference || item.id}`}
-                    </Text>
+              return (
+                <View key={index} style={styles.rideCard}>
 
-                    <Text style={styles.datePriceText}>
-                      {item.seats_booked} Seats • {item.price}
-                    </Text>
+                  {/* ── Top Row: Info + Car Image ── */}
+                  <View style={styles.cardTop}>
+                    <View style={{ flex: 1 }}>
+                      {/* Route */}
+                      <Text style={styles.routeText} numberOfLines={1}>
+                        {item.location || item.ride?.pickup_point || '—'} → {item.destination || item.ride?.drop_point || '—'}
+                      </Text>
 
-                    <Text style={[styles.datePriceText, { color: item.status === 'pending' ? 'orange' : item.status === 'completed' ? 'green' : 'red' }]}>
-                      Status: {item.status}
-                    </Text>
+                      {/* Date & Seats */}
+                      <View style={styles.metaRow}>
+                        <Icon name="calendar" size={13} color="#888" />
+                        <Text style={styles.metaText}>{item.booking_date || '—'}</Text>
+                        <Icon name="seat-passenger" size={13} color="#888" style={{ marginLeft: 10 }} />
+                        <Text style={styles.metaText}>{item.seats_booked} seat(s)</Text>
+                      </View>
+
+                      {/* Price */}
+                      <Text style={styles.priceText}>{item.price || item.total_price || '0'}</Text>
+
+                      {/* Status Badge */}
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+                        <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                          {item.status?.toUpperCase()}
+                        </Text>
+                      </View>
+
+                      {/* My Role */}
+                      <Text style={styles.roleLabel}>
+                        You are: <Text style={styles.roleBold}>{isIAmCreator ? 'Ride Creator (Driver)' : 'Ride Booker (Passenger)'}</Text>
+                      </Text>
+                    </View>
+
+                    {/* Car Image */}
+                    <Image source={getCarImage(item)} style={styles.carImg} resizeMode="cover" />
                   </View>
 
-                  {/* Image with Robust Path Handling */}
-                  <Image
-                    source={(() => {
-                      const carPhoto = item.car_details?.car_photo
-                        || item.ride?.car_details?.car_photo
-                        || item.ride_details?.car_details?.car_photo;
-                      if (carPhoto) {
-                        return { uri: carPhoto.startsWith('http') ? carPhoto : `${IMG_URL}${carPhoto}` };
-                      }
-                      return require('../asset/Image/Rides.png');
-                    })()}
-                    style={styles.rideImage}
-                    resizeMode="cover"
-                  />
-                </View>
-
-                {/* Bottom Row: Actions */}
-                <View style={[styles.actionRow, { justifyContent: 'space-between', marginTop: 15 }]}>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('DriverIntarnal', {
-                      bookingId: item.id,
-                      // Passing driverId explicitly in case internal fetch misses it
-                      driverId: item.ride?.user_id || item.driver_id || item.ride?.driver_id
-                    })}
-                    style={[styles.detailsButton, { marginTop: 0 }]}
-                  >
-                    <Text style={styles.detailsButtonText}>View Details</Text>
-                  </TouchableOpacity>
-
-                  {/* Actions for Pending and Confirmed */}
-                  {(item.status === 'pending' || item.status === 'confirmed') && (
-                    <View style={{ flexDirection: 'row' }}>
-
-                      {/* Driver Confirm Option - ONLY for Pending */}
-                      {userType === 'driver' && item.status === 'pending' && (
-                        <TouchableOpacity
-                          style={[styles.smallBtn, styles.confirmBtn]}
-                          onPress={() => handleConfirm(item.id)}
-                        >
-                          <Text style={styles.smallBtnText}>Confirm</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {/* Cancel Option - For both Pending and Confirmed */}
-                      <TouchableOpacity
-                        style={[styles.smallBtn, styles.cancelBtn]}
-                        onPress={() => handleCancel(item.id)}
-                      >
-                        <Text style={styles.smallBtnText}>Cancel</Text>
-                      </TouchableOpacity>
-
+                  {/* ── Other Person Info ── */}
+                  {otherPerson?.name && (
+                    <View style={styles.otherPersonRow}>
+                      <Icon
+                        name={isIAmCreator ? 'account-arrow-left' : 'account-arrow-right'}
+                        size={16}
+                        color="#1fa000"
+                      />
+                      <Text style={styles.otherPersonText}>
+                        {isIAmCreator ? 'Booker: ' : 'Creator: '}
+                        <Text style={styles.otherPersonName}>{otherPerson.name}</Text>
+                      </Text>
                     </View>
                   )}
 
-                  {/* Completed: Rate Button */}
-                  {item.status === 'completed' && (
-                    <View style={{ flexDirection: 'row' }}>
+                  {/* ── Bottom Actions ── */}
+                  <View style={styles.actionRow}>
+
+                    {/* View Details (always) */}
+                    <TouchableOpacity
+                      style={styles.detailsBtn}
+                      onPress={() => navigation.navigate('DriverIntarnal', {
+                        bookingId: item.id,
+                        driverId: item.ride?.user_id || item.driver_id,
+                      })}
+                    >
+                      <Icon name="information-outline" size={15} color="#fff" />
+                      <Text style={styles.detailsBtnText}>Details</Text>
+                    </TouchableOpacity>
+
+                    {/* Confirm (Driver/Creator only: Upcoming + Pending) */}
+                    {isUpcoming && isIAmCreator && item.status?.toLowerCase() === 'pending' && (
                       <TouchableOpacity
-                        style={[styles.smallBtn, styles.rateBtn]}
-                        onPress={() => navigation.navigate('AddReviewScreen', {
-                          bookingId: item.id,
-                          targetRole: userType === 'driver' ? 'passenger' : 'driver',
-                          driverId: item.ride?.user_id || item.driver_id || item.ride?.driver_id,
-                          userId: userId
-                        })}
+                        style={styles.confirmBtn}
+                        onPress={() => handleConfirm(item.id)}
                       >
-                        <Text style={[styles.smallBtnText, { color: '#000' }]}>Rate {userType === 'driver' ? 'Passenger' : 'Driver'}</Text>
+                        <Icon name="check" size={16} color="#fff" />
+                        <Text style={styles.confirmBtnText}>Confirm</Text>
                       </TouchableOpacity>
-                    </View>
-                  )}
+                    )}
+
+                    {/* Mark Complete (Driver/Creator only: Upcoming + Confirmed) */}
+                    {isUpcoming && isIAmCreator && item.status?.toLowerCase() === 'confirmed' && (
+                      <TouchableOpacity
+                        style={styles.completeBtn}
+                        onPress={() => handleMarkComplete(item.id)}
+                      >
+                        <Icon name="check-all" size={16} color="#fff" />
+                        <Text style={styles.completeBtnText}>Complete</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Reduce Seats (Passenger only: Upcoming + >1 seat) */}
+                    {isUpcoming && !isIAmCreator && item.seats_booked > 1 && (
+                      <TouchableOpacity
+                        style={styles.reduceBtn}
+                        onPress={() => handleReduceSeats(item.id, item.seats_booked)}
+                      >
+                        <Icon name="account-minus-outline" size={15} color="#fff" />
+                        <Text style={styles.reduceBtnText}>Reduce Seats</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Cancel/Reject (Upcoming only: both Driver & Passenger) */}
+                    {isUpcoming && (
+                      <TouchableOpacity
+                        style={styles.cancelBtn}
+                        onPress={() => handleCancel(item.id, item.user_type)}
+                      >
+                        <Icon name="close" size={15} color="#fff" />
+                        <Text style={styles.cancelBtnText}>
+                          {isIAmCreator && item.status?.toLowerCase() === 'pending' ? 'Reject' : 'Cancel'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* ⭐ Rate (Completed only) */}
+                    {isCompleted && (
+                      <TouchableOpacity
+                        style={styles.rateBtn}
+                        onPress={() => handleRate(item)}
+                      >
+                        <Icon name="star-outline" size={16} color="#fff" />
+                        <Text style={styles.rateBtnText}>
+                          Rate {isIAmCreator ? 'Booker' : 'Creator'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </ScrollView>
       )}
@@ -306,15 +515,13 @@ const YourRides = () => {
 
 export default YourRides;
 
-/* =============== FIXED SAFE AREA STYLES =============== */
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+    backgroundColor: '#f5f7fa',
   },
 
+  /* Header */
   header: {
     height: 60,
     backgroundColor: '#248907',
@@ -322,135 +529,287 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    elevation: 5,
   },
-
   headerTitle: {
     color: '#fff',
     fontSize: 20,
     fontWeight: '700',
   },
 
+  /* Tabs */
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#e6f5e6',
+    backgroundColor: '#fff',
+    elevation: 2,
   },
-
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: 'center',
   },
-
   tabText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#888',
   },
-
   activeTab: {
     borderBottomWidth: 3,
     borderBottomColor: '#248907',
   },
-
   activeTabText: {
     color: '#248907',
     fontWeight: '700',
   },
 
+  /* Center / Empty */
+  centerBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyBox: {
+    alignItems: 'center',
+    marginTop: 70,
+  },
+  emptyText: {
+    color: '#aaa',
+    fontSize: 15,
+    marginTop: 12,
+    fontWeight: '500',
+  },
+
+  /* Ride Card */
   rideCard: {
-    flexDirection: 'row',
     backgroundColor: '#fff',
-    elevation: 3,
-    padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
   },
 
-  rideImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 10,
-    marginLeft: 15,
+  /* Card Top */
+  cardTop: {
+    flexDirection: 'row',
+    marginBottom: 12,
   },
-
-  timeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
-  },
-
-  titleText: {
+  routeText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000',
-    marginTop: 2,
+    color: '#1a1a1a',
+    marginBottom: 5,
   },
-
-  datePriceText: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 4,
-  },
-
-  detailsButton: {
-    backgroundColor: '#248907',
-    borderRadius: 8,
-    marginTop: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    alignSelf: 'flex-start',
-  },
-
-  detailsButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-
-  actionRow: {
-    marginTop: 10,
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 5,
   },
-
-  iconBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginLeft: 10,
-    elevation: 2,
-    justifyContent: 'center',
+  metaText: {
+    fontSize: 12,
+    color: '#888',
+    marginLeft: 4,
+  },
+  priceText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#248907',
+    marginBottom: 6,
+  },
+  statusBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    marginBottom: 5,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  roleLabel: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 2,
+  },
+  roleBold: {
+    color: '#248907',
+    fontWeight: '700',
+  },
+  carImg: {
+    width: 85,
+    height: 85,
+    borderRadius: 12,
+    marginLeft: 12,
   },
 
-  rateBtn: {
-    backgroundColor: '#FFD700', // Gold color for rating
-    marginLeft: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8
+  /* Other Person Row */
+  otherPersonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0faf0',
+    padding: 9,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#d4edda',
+  },
+  otherPersonText: {
+    fontSize: 13,
+    color: '#555',
+    marginLeft: 7,
+  },
+  otherPersonName: {
+    fontWeight: '700',
+    color: '#1a1a1a',
   },
 
-  smallBtn: {
-    paddingVertical: 5,
+  /* Action Row */
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+
+  /* Details Button */
+  detailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#248907',
+    paddingVertical: 7,
     paddingHorizontal: 12,
-    borderRadius: 6,
-    marginLeft: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 8,
   },
-
-  smallBtnText: {
+  detailsBtnText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+    marginLeft: 4,
   },
 
-  cancelBtn: {
-    backgroundColor: '#ff4d4d', // Red
+  /* Message Button */
+  msgBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ebf5fb',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2980b9',
+  },
+  msgBtnText: {
+    color: '#2980b9',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
 
+  /* Call Button */
+  callBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eafaf1',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#27ae60',
+  },
+  callBtnText: {
+    color: '#27ae60',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+
+  /* Confirm Button */
   confirmBtn: {
-    backgroundColor: '#248907', // Green
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#27ae60',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  confirmBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+
+  /* Cancel Button */
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e74c3c',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  cancelBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  /* Complete Button */
+  completeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1fa000',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  completeBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+
+  /* Rate Button */
+  rateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f39c12',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  rateBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  reduceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3f51b5',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  reduceBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
   },
 });

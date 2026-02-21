@@ -5,15 +5,16 @@ import {
   StatusBar,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   Platform,
   ScrollView,
   Image,
   Alert,
   FlatList,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  KeyboardAvoidingView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -197,131 +198,136 @@ const AddYourCar = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
       <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
 
-      {/* Header */}
-      <View style={styles.headerView}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>My Garage</Text>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'list' && styles.activeTabButton]}
-          onPress={() => setActiveTab('list')}
-        >
-          <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>My Cars</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'add' && styles.activeTabButton]}
-          onPress={() => setActiveTab('add')}
-        >
-          <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>Add Car</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content */}
-      {activeTab === 'list' ? (
-        <View style={{ flex: 1 }}>
-          {loadingCars && !refreshing ? (
-            <ActivityIndicator size="large" color="#248907" style={{ marginTop: 50 }} />
-          ) : (
-            <FlatList
-              data={myCars}
-              renderItem={renderCarItem}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={{ paddingHorizontal: 5, paddingBottom: 20 }}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Icon name="car-off" size={60} color="#ccc" />
-                  <Text style={styles.emptyText}>No cars added yet.</Text>
-                  <TouchableOpacity onPress={() => setActiveTab('add')} style={styles.addFirstBtn}>
-                    <Text style={styles.addFirstBtnText}>Add Your First Car</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-            />
-          )}
+        {/* Header */}
+        <View style={styles.headerView}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>My Garage</Text>
         </View>
-      ) : (
-        <View style={{ flex: 1 }}>
-          {/* Reuse the ScrollView Form structure */}
-          <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
-            {step === 1 ? (
-              <>
-                <Text style={styles.formTitle}>Car Details</Text>
-                <View style={{ alignItems: 'center', marginTop: 10 }}>
-                  <TextInput placeholder="Car Make" placeholderTextColor="#777" style={styles.input} value={carMake} onChangeText={setCarMake} />
-                  <TextInput placeholder="Car Model" placeholderTextColor="#777" style={styles.input} value={carModel} onChangeText={setCarModel} />
-                  <TextInput placeholder="Car Year" placeholderTextColor="#777" keyboardType="numeric" style={styles.input} value={carYear} onChangeText={setCarYear} />
-                  <TextInput placeholder="Car Color" placeholderTextColor="#777" style={styles.input} value={carColor} onChangeText={setCarColor} />
-                  <TextInput placeholder="License Plate" placeholderTextColor="#777" style={styles.input} value={licensePlate} onChangeText={setLicensePlate} />
-                </View>
 
-                <Text style={styles.sectionTitle}>Add photo of your car</Text>
-                <View style={styles.uploadBox}>
-                  {carPhoto ? (
-                    <Image source={{ uri: carPhoto.path }} style={styles.previewImage} />
-                  ) : (
-                    <>
-                      <Text style={styles.uploadTitle}>Add photo</Text>
-                      <Text style={styles.uploadSubtitle}>Add photo of your car to help{'\n'}passengers identify it</Text>
-                    </>
-                  )}
-                  <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setCarPhoto)}>
-                    <Text style={styles.uploadButtonText}>{carPhoto ? 'Change Photo' : 'Add Photo'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'list' && styles.activeTabButton]}
+            onPress={() => setActiveTab('list')}
+          >
+            <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>My Cars</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'add' && styles.activeTabButton]}
+            onPress={() => setActiveTab('add')}
+          >
+            <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>Add Car</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Content */}
+        {activeTab === 'list' ? (
+          <View style={{ flex: 1, paddingHorizontal: 20 }}>
+            {loadingCars && !refreshing ? (
+              <ActivityIndicator size="large" color="#248907" style={{ marginTop: 50 }} />
             ) : (
-              <>
-                <Text style={styles.msgText}>Please take clear photos of your driver's license.</Text>
-                <Text style={styles.sectionTitle}>Driver's License (Front)</Text>
-                <View style={styles.uploadBox}>
-                  {licenseFront ? (
-                    <Image source={{ uri: licenseFront.path }} style={styles.previewImage} />
-                  ) : (
-                    <Icon name="card-account-details-outline" size={50} color="#ccc" />
-                  )}
-                  <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setLicenseFront)}>
-                    <Text style={styles.uploadButtonText}>{licenseFront ? 'Change Photo' : 'Upload Front'}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.sectionTitle}>Driver's License (Back)</Text>
-                <View style={styles.uploadBox}>
-                  {licenseBack ? (
-                    <Image source={{ uri: licenseBack.path }} style={styles.previewImage} />
-                  ) : (
-                    <Icon name="card-account-details-outline" size={50} color="#ccc" />
-                  )}
-                  <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setLicenseBack)}>
-                    <Text style={styles.uploadButtonText}>{licenseBack ? 'Change Photo' : 'Upload Back'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </ScrollView>
-
-          {/* Bottom Fixed Buttons for Form */}
-          <View style={styles.bottomSection}>
-            {step === 1 ? (
-              <TouchableOpacity onPress={handleContinue} style={styles.continueButton}>
-                <Text style={styles.continueText}>Continue</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={handleSubmit} style={[styles.continueButton, submitting && { opacity: 0.7 }]} disabled={submitting}>
-                <Text style={styles.continueText}>{submitting ? 'Submitting...' : 'Submit'}</Text>
-              </TouchableOpacity>
+              <FlatList
+                data={myCars}
+                renderItem={renderCarItem}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={{ paddingHorizontal: 5, paddingBottom: 20 }}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Icon name="car-off" size={60} color="#ccc" />
+                    <Text style={styles.emptyText}>No cars added yet.</Text>
+                    <TouchableOpacity onPress={() => setActiveTab('add')} style={styles.addFirstBtn}>
+                      <Text style={styles.addFirstBtnText}>Add Your First Car</Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
             )}
           </View>
-        </View>
-      )}
+        ) : (
+          <View style={{ flex: 1, paddingHorizontal: 20 }}>
+            {/* Reuse the ScrollView Form structure */}
+            <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
+              {step === 1 ? (
+                <>
+                  <Text style={styles.formTitle}>Car Details</Text>
+                  <View style={{ alignItems: 'center', marginTop: 10 }}>
+                    <TextInput placeholder="Car Make" placeholderTextColor="#777" style={styles.input} value={carMake} onChangeText={setCarMake} />
+                    <TextInput placeholder="Car Model" placeholderTextColor="#777" style={styles.input} value={carModel} onChangeText={setCarModel} />
+                    <TextInput placeholder="Car Year" placeholderTextColor="#777" keyboardType="numeric" style={styles.input} value={carYear} onChangeText={setCarYear} />
+                    <TextInput placeholder="Car Color" placeholderTextColor="#777" style={styles.input} value={carColor} onChangeText={setCarColor} />
+                    <TextInput placeholder="License Plate" placeholderTextColor="#777" style={styles.input} value={licensePlate} onChangeText={setLicensePlate} />
+                  </View>
+
+                  <Text style={styles.sectionTitle}>Add photo of your car</Text>
+                  <View style={styles.uploadBox}>
+                    {carPhoto ? (
+                      <Image source={{ uri: carPhoto.path }} style={styles.previewImage} />
+                    ) : (
+                      <>
+                        <Text style={styles.uploadTitle}>Add photo</Text>
+                        <Text style={styles.uploadSubtitle}>Add photo of your car to help{'\n'}passengers identify it</Text>
+                      </>
+                    )}
+                    <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setCarPhoto)}>
+                      <Text style={styles.uploadButtonText}>{carPhoto ? 'Change Photo' : 'Add Photo'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.msgText}>Please take clear photos of your driver's license.</Text>
+                  <Text style={styles.sectionTitle}>Driver's License (Front)</Text>
+                  <View style={styles.uploadBox}>
+                    {licenseFront ? (
+                      <Image source={{ uri: licenseFront.path }} style={styles.previewImage} />
+                    ) : (
+                      <Icon name="card-account-details-outline" size={50} color="#ccc" />
+                    )}
+                    <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setLicenseFront)}>
+                      <Text style={styles.uploadButtonText}>{licenseFront ? 'Change Photo' : 'Upload Front'}</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.sectionTitle}>Driver's License (Back)</Text>
+                  <View style={styles.uploadBox}>
+                    {licenseBack ? (
+                      <Image source={{ uri: licenseBack.path }} style={styles.previewImage} />
+                    ) : (
+                      <Icon name="card-account-details-outline" size={50} color="#ccc" />
+                    )}
+                    <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setLicenseBack)}>
+                      <Text style={styles.uploadButtonText}>{licenseBack ? 'Change Photo' : 'Upload Back'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Bottom Fixed Buttons for Form */}
+            <View style={styles.bottomSection}>
+              {step === 1 ? (
+                <TouchableOpacity onPress={handleContinue} style={styles.continueButton}>
+                  <Text style={styles.continueText}>Continue</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={handleSubmit} style={[styles.continueButton, submitting && { opacity: 0.7 }]} disabled={submitting}>
+                  <Text style={styles.continueText}>{submitting ? 'Submitting...' : 'Submit'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -330,10 +336,14 @@ export default AddYourCar;
 
 const styles = StyleSheet.create({
   safe: {
-    flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
+    flex: 1,
+    backgroundColor: '#fff',
   },
   headerView: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
   },
   headerText: {
     fontSize: 20, fontWeight: '600', color: '#000', flex: 1, textAlign: 'center', marginRight: 24,
@@ -341,7 +351,11 @@ const styles = StyleSheet.create({
 
   // Tabs
   tabContainer: {
-    flexDirection: 'row', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#eee',
+    flexDirection: 'row',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingHorizontal: 20,
   },
   tabButton: {
     flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent',
@@ -426,8 +440,14 @@ const styles = StyleSheet.create({
   previewImage: {
     width: 200, height: 120, borderRadius: 10, resizeMode: 'cover',
   },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
   bottomSection: {
-    position: 'absolute', bottom: 20, left: 20, right: 20, alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
   },
   continueButton: {
     width: '100%', height: 55, backgroundColor: '#248907', borderRadius: 10, justifyContent: 'center', alignItems: 'center',

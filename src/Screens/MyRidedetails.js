@@ -9,124 +9,116 @@ import {
   Image,
   Linking,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IMG_URL } from '../config/config';
 
 const MyRidedetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { driver_info, trip_summary, booking_information, passenger_info, ride_information } = route.params || {};
 
-  const [userType, setUserType] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // ─── All data passed from DriverIntarnal ─────────────────────
+  const {
+    driver_info,
+    passenger_info,
+    trip_summary,
+    booking_information,
+    ride_information,
+    myRole,           // 'driver' or 'passenger'
+    contactPerson,    // already resolved correct person to contact
+    contactLabel,     // 'Driver' or 'Passenger'
+    openChat,         // if true, open chat screen
+  } = route.params || {};
+  // ─────────────────────────────────────────────────────────────
 
+  // myRole = 'driver'    → I created the ride → contactPerson = passenger_info
+  // myRole = 'passenger' → I booked the ride  → contactPerson = driver_info
+  const isIAmDriver = myRole === 'driver';
+
+  // Resolve the person to contact (fallback if contactPerson not passed)
+  const resolvedContact = contactPerson
+    ? contactPerson
+    : isIAmDriver
+      ? passenger_info
+      : driver_info;
+
+  const targetName = resolvedContact?.name || contactLabel || 'Contact';
+  const targetPhone = resolvedContact?.phone || resolvedContact?.mobile || null;
+  const targetId = resolvedContact?.id || resolvedContact?.user_id || null;
+
+  const targetImageRaw = resolvedContact?.profile_picture;
+  const targetImage = targetImageRaw
+    ? (targetImageRaw.startsWith('http')
+      ? targetImageRaw
+      : `${IMG_URL}${targetImageRaw}`)
+    : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+  // Open chat directly if flag passed
   useEffect(() => {
-    const getUserType = async () => {
-      try {
-        const userDataStr = await AsyncStorage.getItem('user_data');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          setUserType(userData.user_type || 'passenger');
-        } else {
-          setUserType('passenger');
-        }
-      } catch (e) {
-        console.error("Error fetching user type", e);
-        setUserType('passenger');
-      } finally {
-        setLoading(false);
-      }
-    };
-    getUserType();
+    if (openChat) {
+      setTimeout(() => handleMessage(), 400);
+    }
   }, []);
 
-  // Determine who to show (The OTHER person)
-  // If I am passenger -> Show Driver
-  // If I am driver -> Show Passenger (from passenger_info or booking_information.user)
-  const isDriver = userType === 'driver';
-
-  const targetInfo = isDriver
-    ? (passenger_info || booking_information?.user)
-    // Fallback for passenger viewing driver
-    : (driver_info || trip_summary?.driver_details || booking_information?.ride?.user || ride_information?.user);
-
-  const targetName = targetInfo?.name || (isDriver ? 'Passenger' : 'Driver');
-  const targetPhone = targetInfo?.phone || targetInfo?.mobile || targetInfo?.phone_number;
-  const targetImage = targetInfo?.profile_picture
-    ? (targetInfo.profile_picture.startsWith('http')
-      ? targetInfo.profile_picture
-      : `${IMG_URL}${targetInfo.profile_picture}`)
-    : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // Generic user icon
-
-  // Extensive ID search because API structure varies greatly
-  const targetId = targetInfo?.id || targetInfo?.user_id || targetInfo?.userId || targetInfo?.driver_id || targetInfo?.user?.id
-    || (driver_info?.id || driver_info?.user_id)
-    || (trip_summary?.driver_details?.id)
-    || (booking_information?.ride?.user_id)
-    || (ride_information?.user_id);
-
-  
+  // Short location: sirf pehle 2 parts (comma se)
+  const getShortPlace = (loc) => {
+    if (!loc) return '—';
+    return loc.split(',').slice(0, 2).map(p => p.trim()).join(', ');
+  };
 
   const handleCall = () => {
-    if (targetPhone) {
-      Linking.openURL(`tel:${targetPhone}`);
+    if (targetPhone && targetPhone !== 'Not available') {
+      const cleanPhone = targetPhone.replace(/[^0-9+]/g, '');
+      Linking.openURL(`tel:${cleanPhone}`).catch(() =>
+        Alert.alert('Error', 'Could not open dialer.')
+      );
     } else {
-      Alert.alert("Error", `${isDriver ? 'Passenger' : 'Driver'} phone number not available.`);
+      Alert.alert('Not Available', `${targetName}'s phone number is not available.`);
     }
   };
 
   const handleMessage = () => {
-    console.log("Navigating to ChatScreen with:");
-    console.log("  targetId:", targetId);
-    console.log("  targetName:", targetName);
-    console.log("  rideId:", trip_summary?.ride_id);
-    console.log("  tripId:", trip_summary?.booking_id);
-
     if (!targetId) {
-      Alert.alert("Error", "Contact user ID not available");
-      console.error("Missing targetId. Info:", targetInfo);
+      Alert.alert('Error', 'Contact user ID not available.');
       return;
     }
     navigation.navigate('ChatScreen', {
       driverName: targetName,
       driverImage: targetImage,
       rideId: trip_summary?.ride_id,
-      receiverId: targetId, // The ID of the person we are messaging
+      receiverId: targetId,
       tripId: trip_summary?.booking_id,
     });
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#248907" />
-      </SafeAreaView>
-    );
-  }
+  // Shorten long location text
+  const shortText = (txt, max = 40) => {
+    if (!txt) return '—';
+    return txt.length > max ? txt.substring(0, max) + '...' : txt;
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#248907" />
 
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#fff" style={{ marginTop: 30 }} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Icon name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ride confirmed</Text>
+        <Text style={styles.headerTitle}>Ride Confirmed</Text>
       </View>
 
-      {/* Map Section */}
+      {/* ── Map ── */}
       <View style={styles.mapContainer}>
-        {trip_summary?.pickup_point && trip_summary?.drop_point ? (
+        {trip_summary?.pickup_point ? (
           <WebView
             source={{
-              uri: `https://www.google.com/maps?q=${encodeURIComponent(trip_summary.pickup_point)}`
+              uri: `https://www.google.com/maps?q=${encodeURIComponent(trip_summary.pickup_point)}`,
             }}
             style={{ flex: 1 }}
           />
@@ -137,24 +129,35 @@ const MyRidedetails = () => {
             resizeMode="cover"
           />
         )}
+
+        {/* Map overlay: short location name */}
+        <View style={styles.mapOverlay}>
+          <Icon name="map-marker" size={14} color="#248907" style={{ marginRight: 4 }} />
+          <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
+            {getShortPlace(trip_summary?.pickup_point)}
+          </Text>
+          <Text style={{ color: '#888', marginHorizontal: 4 }}>→</Text>
+          <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
+            {getShortPlace(trip_summary?.drop_point)}
+          </Text>
+        </View>
       </View>
 
-      {/* Info Section */}
+      {/* ── Info Section ── */}
       <View style={styles.content}>
-        <View style={styles.driverRow}>
-          <Image
-            source={{ uri: targetImage }}
-            style={styles.driverImage}
-          />
-          <View>
-            <Text style={styles.driverName}>{targetName}</Text>
-            <Text style={styles.arrivalText}>
-              {isDriver ? 'Passenger' : 'Driver'} • {trip_summary?.departure_time || 'N/A'}
+
+        {/* Person info (Driver or Passenger) */}
+        <View style={styles.personRow}>
+          <Image source={{ uri: targetImage }} style={styles.personImage} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.personName}>{targetName}</Text>
+            <Text style={styles.subLabel}>
+              {contactLabel || (isIAmDriver ? 'Passenger' : 'Driver')} · {trip_summary?.departure_time || ''}
             </Text>
-            {!isDriver && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                <Icon name="star" size={14} color="#FFD700" />
-                <Text style={{ marginLeft: 4, fontWeight: '600' }}>{driver_info?.rating || '0.0'}</Text>
+            {!isIAmDriver && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                <Icon name="star" size={13} color="#FFD700" />
+                <Text style={styles.ratingText}>{driver_info?.rating || '0.0'}</Text>
               </View>
             )}
           </View>
@@ -162,40 +165,45 @@ const MyRidedetails = () => {
 
         {/* Pickup */}
         <View style={styles.locationCard}>
-          <View style={styles.locationIconContainer}>
-            <Icon name="map-marker" size={24} color="#fff" />
+          <View style={styles.locationIcon}>
+            <Icon name="map-marker" size={20} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.locationLabel}>Pickup</Text>
-            <Text style={styles.locationAddress} numberOfLines={2}>
-              {trip_summary?.pickup_location || trip_summary?.pickup_point || 'Select Pickup'}
+            <Text style={styles.locationAddress} numberOfLines={2} ellipsizeMode="tail">
+              {trip_summary?.pickup_location || trip_summary?.pickup_point || '—'}
             </Text>
           </View>
         </View>
 
         {/* Dropoff */}
         <View style={styles.locationCard}>
-          <View style={styles.locationIconContainer}>
-            <Icon name="map-marker" size={24} color="#fff" />
+          <View style={[styles.locationIcon, { backgroundColor: '#e74c3c' }]}>
+            <Icon name="map-marker" size={20} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.locationLabel}>Dropoff</Text>
-            <Text style={styles.locationAddress} numberOfLines={2}>
-              {trip_summary?.drop_location || trip_summary?.drop_point || 'Select Dropoff'}
+            <Text style={styles.locationAddress} numberOfLines={2} ellipsizeMode="tail">
+              {trip_summary?.drop_location || trip_summary?.drop_point || '—'}
             </Text>
           </View>
         </View>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-            <Text style={styles.callText}>Call {isDriver ? 'Passenger' : 'Driver'}</Text>
+            <Icon name="phone" size={18} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={styles.callText}>
+              Call {contactLabel || (isIAmDriver ? 'Passenger' : 'Driver')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
+            <Icon name="message-text" size={18} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.messageText}>Message</Text>
           </TouchableOpacity>
         </View>
+
       </View>
     </SafeAreaView>
   );
@@ -207,107 +215,115 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
   },
   header: {
     backgroundColor: '#248907',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
+  backBtn: { padding: 4 },
   headerTitle: {
     color: '#fff',
     fontSize: 17,
     fontWeight: '700',
     marginLeft: 10,
-    marginTop: 30,
   },
-  mapContainer: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#eee',
+
+  /* Map */
+  mapContainer: { width: '100%', height: 200, backgroundColor: '#eee' },
+  mapImage: { width: '100%', height: '100%' },
+  mapOverlay: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  mapImage: {
-    width: '100%',
-    height: '100%',
+  mapOverlayText: {
+    color: '#1a1a1a',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
   },
+
+  /* Content */
   content: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 15,
+    paddingHorizontal: 18,
+    paddingTop: 16,
   },
-  driverRow: {
+
+  /* Person row */
+  personRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 25,
+    marginBottom: 18,
   },
-  driverImage: {
-    width: 55,
-    height: 55,
-    borderRadius: 50,
-    marginRight: 15,
+  personImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    marginRight: 14,
+    backgroundColor: '#eee',
   },
-  driverName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-  },
-  arrivalText: {
-    color: '#777',
-    fontSize: 13,
-  },
+  personName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
+  subLabel: { color: '#888', fontSize: 12, marginTop: 2 },
+  ratingText: { marginLeft: 4, fontWeight: '600', fontSize: 13, color: '#333' },
+
+  /* Location card */
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f8f9fa',
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
-  locationIconContainer: {
+  locationIcon: {
     backgroundColor: '#248907',
     borderRadius: 8,
     padding: 6,
     marginRight: 12,
   },
-  locationLabel: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#000',
-  },
-  locationAddress: {
-    color: '#555',
-    fontSize: 13,
-  },
+  locationLabel: { fontWeight: '600', fontSize: 13, color: '#1a1a1a', marginBottom: 2 },
+  locationAddress: { color: '#666', fontSize: 12, lineHeight: 17 },
+
+  /* Buttons */
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 25,
+    marginTop: 18,
+    gap: 10,
   },
   callButton: {
     flex: 1,
-    backgroundColor: '#b60000',
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 10,
+    justifyContent: 'center',
+    backgroundColor: '#b60000',
+    paddingVertical: 13,
+    borderRadius: 10,
   },
-  callText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+  callText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   messageButton: {
     flex: 1,
-    backgroundColor: '#007bff',
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1565c0',
+    paddingVertical: 13,
+    borderRadius: 10,
   },
-  messageText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+  messageText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

@@ -21,6 +21,13 @@ const SignUp = () => {
 
   const signInWithGoogle = async () => {
     try {
+      // Force account selection by signing out first
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        // Ignore if not signed in
+      }
+
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       console.log('Google User Info:', userInfo);
@@ -32,15 +39,32 @@ const SignUp = () => {
         return;
       }
 
-      const response = await axios.post(`${BASE_URL}auth/google-login`, {
+      const response = await axios.post(`${BASE_URL}auth/google-register`, {
         id_token: idToken
       });
 
-      if (response.data.access_token) {
-        await AsyncStorage.setItem('userToken', response.data.access_token);
-        await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
-        Alert.alert('Success', 'Logged in successfully');
-        navigation.navigate('DriverIntarnal');
+      if (response.data.status === "true" || response.data.access_token) {
+        const { access_token, user } = response.data;
+
+        if (access_token) {
+          await AsyncStorage.setItem('access_token', access_token);
+        }
+
+        if (user) {
+          await AsyncStorage.setItem('user_data', JSON.stringify(user));
+          if (user.id) {
+            await AsyncStorage.setItem('user_id', user.id.toString());
+          }
+        }
+
+        Alert.alert('Success', response.data.message || 'Registration Successful!', [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('RideBookingPage')
+          }
+        ]);
+      } else {
+        Alert.alert('Error', response.data.message || 'Login failed');
       }
 
     } catch (error) {
@@ -52,7 +76,8 @@ const SignUp = () => {
         Alert.alert('Error', 'Play services not available or outdated');
       } else {
         console.error('Google Sign-In Error:', error);
-        Alert.alert('Error', error.message || 'Something went wrong');
+        const errorMsg = error.response?.data?.message || error.message || 'Something went wrong';
+        Alert.alert('Error', errorMsg);
       }
     }
   };
@@ -64,28 +89,6 @@ const SignUp = () => {
       {/* Title */}
       <Text style={styles.title}>Let’s You In</Text>
 
-      {/* Social Buttons */}
-      <View style={styles.buttonview}>
-        <TouchableOpacity style={styles.button} onPress={signInWithGoogle}>
-          <Image
-            source={require('../asset/Image/google.png')}
-            style={styles.icon}
-          />
-          <Text style={styles.text1}>Continue With Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={require('../asset/Image/apple.png')}
-            style={styles.icon}
-          />
-          <Text style={styles.text1}>Continue With Apple</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* OR Divider */}
-      <Text style={styles.orText}>Or</Text>
-
       {/* Sign Up Button */}
       <TouchableOpacity
         onPress={() => navigation.navigate('SignUpDetails')}
@@ -93,6 +96,29 @@ const SignUp = () => {
       >
         <Text style={styles.text}>Sign Up</Text>
       </TouchableOpacity>
+
+      <View style={styles.orRow}>
+        <View style={styles.line} />
+        <Text style={styles.orText}>Or</Text>
+        <View style={styles.line} />
+      </View>
+
+      {/* Social Buttons */}
+      <View style={styles.socialRow}>
+        <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
+          <Image
+            source={require('../asset/Image/google.png')}
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.socialBtn}>
+          <Image
+            source={require('../asset/Image/apple.png')}
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Already have account */}
       <View style={styles.footerRow}>
@@ -125,43 +151,6 @@ const styles = StyleSheet.create({
     width: '80%',
   },
 
-  buttonview: {
-    width: '80%',
-    marginTop: 60,
-  },
-
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    borderColor: '#dcdcdc',
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-
-  icon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
-  },
-
-  text1: {
-    marginLeft: 25,
-    fontSize: 17,
-    color: '#000',
-    fontWeight: '500',
-  },
-
-  orText: {
-    marginTop: 15,
-    fontSize: 20,
-    color: '#000',
-    fontWeight: '700',
-  },
-
   SignUp: {
     width: '80%',
     height: 55,
@@ -169,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 15,
+    marginTop: 60,
   },
 
   text: {
@@ -178,16 +167,59 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 35,
+    width: '80%',
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#dcdcdc',
+  },
+  orText: {
+    marginHorizontal: 15,
+    color: '#000',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 30,
+    marginBottom: 40,
+  },
+  socialBtn: {
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#dcdcdc',
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  socialIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
+
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: 20,
   },
 
   footerText: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#000',
     marginRight: 10,
+    fontWeight: '500',
   },
 
   arrowCircle: {
