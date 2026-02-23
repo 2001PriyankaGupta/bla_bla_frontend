@@ -25,6 +25,7 @@ import DatePicker from 'react-native-date-picker';
 import MapView, { Marker } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import GetLocation from 'react-native-get-location';
+import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 
 const RideBookingPage = () => {
   const navigation = useNavigation();
@@ -87,6 +88,20 @@ const RideBookingPage = () => {
       }
 
       setLoadingLocation(true);
+
+      // Prompt to enable GPS if on Android
+      if (Platform.OS === 'android') {
+        try {
+          await promptForEnableLocationIfNeeded({
+            interval: 10000,
+            fastInterval: 5000,
+          });
+        } catch (err) {
+          console.log("GPS Enable Prompt Error/Cancel:", err);
+          // If user cancels, we still try to get location, but it will likely fail 
+          // react-native-get-location will handle the error.
+        }
+      }
 
       GetLocation.getCurrentPosition({
         enableHighAccuracy: true,

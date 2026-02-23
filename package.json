@@ -21,6 +21,7 @@
     "axios": "^1.13.2",
     "react": "19.1.1",
     "react-native": "0.82.1",
+    "react-native-android-location-enabler": "^3.0.1",
     "react-native-date-picker": "^5.0.13",
     "react-native-gesture-handler": "^2.29.1",
     "react-native-get-location": "^6.0.1",
