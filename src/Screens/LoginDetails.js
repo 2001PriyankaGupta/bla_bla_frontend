@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
@@ -126,77 +127,81 @@ const LoginDetails = () => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ width: '100%', alignItems: 'center' }}
+        style={{ flex: 1, width: '100%' }}
       >
-        {/* Email Input */}
-        <View style={styles.inputBox}>
-          <Icon name="email-outline" size={22} color="#000" />
-          <TextInput
-            placeholder="Email/ Mobile No"
-            placeholderTextColor="#777"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 30 }} showsVerticalScrollIndicator={false}>
+          <View style={{ alignItems: 'center', width: '100%' }}>
+            {/* Email Input */}
+            <View style={styles.inputBox}>
+              <Icon name="email-outline" size={22} color="#000" />
+              <TextInput
+                placeholder="Email/ Mobile No"
+                placeholderTextColor="#777"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
 
-        {/* Password Input */}
-        <View style={styles.inputBox}>
-          <Icon name="lock-outline" size={22} color="#000" />
+            {/* Password Input */}
+            <View style={styles.inputBox}>
+              <Icon name="lock-outline" size={22} color="#000" />
 
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#777"
-            secureTextEntry={!showPassword}
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#777"
+                secureTextEntry={!showPassword}
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+              />
 
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={{ paddingHorizontal: 5 }}
-          >
-            <Icon
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color="#000"
-            />
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={{ paddingHorizontal: 5 }}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
 
-        <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 20 }}>
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={{ color: '#248907', fontWeight: 'bold' }}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 20 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={{ color: '#248907', fontWeight: 'bold' }}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* Next Button */}
-        <TouchableOpacity style={styles.nextButton} onPress={handleLogin}>
-          <Text style={styles.nextText}>Login</Text>
-        </TouchableOpacity>
+            {/* Next Button */}
+            <TouchableOpacity style={styles.nextButton} onPress={handleLogin}>
+              <Text style={styles.nextText}>Login</Text>
+            </TouchableOpacity>
 
-        <View style={styles.orRow}>
-          <View style={styles.line} />
-          <Text style={styles.orText}>Or</Text>
-          <View style={styles.line} />
-        </View>
+            <View style={styles.orRow}>
+              <View style={styles.line} />
+              <Text style={styles.orText}>Or</Text>
+              <View style={styles.line} />
+            </View>
 
-        <View style={styles.socialRow}>
-          <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
-            <Image source={require('../asset/Image/google.png')} style={styles.socialIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtn}>
-            <Image source={require('../asset/Image/apple.png')} style={styles.socialIcon} />
-          </TouchableOpacity>
-        </View>
+            <View style={styles.socialRow}>
+              <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
+                <Image source={require('../asset/Image/google.png')} style={styles.socialIcon} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialBtn}>
+                <Image source={require('../asset/Image/apple.png')} style={styles.socialIcon} />
+              </TouchableOpacity>
+            </View>
 
-        {/* Cancel */}
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
+            {/* Cancel */}
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

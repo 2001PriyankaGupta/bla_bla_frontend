@@ -9,6 +9,8 @@ import {
   StatusBar,
   Image,
   Platform,
+  ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import React, { useState } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -24,104 +26,110 @@ const ProfileSetup = () => {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Profile Setup</Text>
-      </View>
-
-      {/* Name */}
-      <Text style={styles.label}>Name</Text>
-      <TextInput
-        placeholder="Enter your name"
-        placeholderTextColor="#777"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-
-      {/* Gender */}
-      <Text style={styles.label}>Gender</Text>
-
-      <TouchableOpacity
-        style={styles.genderBox}
-        onPress={() => setShowGenderOptions(!showGenderOptions)}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <Text style={styles.genderText}>
-          {gender ? gender : 'Select your gender'}
-        </Text>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon name="arrow-left" size={24} color="#000" />
+            </TouchableOpacity>
 
-        <View>
-          <Icon name="menu-up" size={20} color="#000" />
-          <Icon name="menu-down" size={20} color="#000" style={{ marginTop: -8 }} />
-        </View>
-      </TouchableOpacity>
+            <Text style={styles.headerTitle}>Profile Setup</Text>
+          </View>
 
-      {/* Dropdown Options */}
-      {showGenderOptions && (
-        <View style={styles.dropdown}>
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-              setGender('Male');
-              setShowGenderOptions(false);
-            }}
-          >
-            <Text style={styles.optionText}>Male</Text>
-          </TouchableOpacity>
+          {/* Name */}
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            placeholder="Enter your name"
+            placeholderTextColor="#777"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+          />
 
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-              setGender('Female');
-              setShowGenderOptions(false);
-            }}
-          >
-            <Text style={styles.optionText}>Female</Text>
-          </TouchableOpacity>
+          {/* Gender */}
+          <Text style={styles.label}>Gender</Text>
 
           <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-              setGender('Other');
-              setShowGenderOptions(false);
-            }}
+            style={styles.genderBox}
+            onPress={() => setShowGenderOptions(!showGenderOptions)}
           >
-            <Text style={styles.optionText}>Other</Text>
+            <Text style={styles.genderText}>
+              {gender ? gender : 'Select your gender'}
+            </Text>
+
+            <View>
+              <Icon name="menu-up" size={20} color="#000" />
+              <Icon name="menu-down" size={20} color="#000" style={{ marginTop: -8 }} />
+            </View>
           </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Profile Picture Section */}
-      <Text style={styles.sectionTitle}>Profile Picture</Text>
+          {/* Dropdown Options */}
+          {showGenderOptions && (
+            <View style={styles.dropdown}>
+              <TouchableOpacity
+                style={styles.option}
+                onPress={() => {
+                  setGender('Male');
+                  setShowGenderOptions(false);
+                }}
+              >
+                <Text style={styles.optionText}>Male</Text>
+              </TouchableOpacity>
 
-      <View style={styles.uploadBox}>
-        <Text style={styles.uploadTitle}>Upload a profile picture</Text>
-        <Text style={styles.uploadSubtitle}>
-          This helps other users recognize you.
-        </Text>
+              <TouchableOpacity
+                style={styles.option}
+                onPress={() => {
+                  setGender('Female');
+                  setShowGenderOptions(false);
+                }}
+              >
+                <Text style={styles.optionText}>Female</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity style={styles.uploadButton}>
-          <Text style={styles.uploadButtonText}>Upload</Text>
-        </TouchableOpacity>
-      </View>
+              <TouchableOpacity
+                style={styles.option}
+                onPress={() => {
+                  setGender('Other');
+                  setShowGenderOptions(false);
+                }}
+              >
+                <Text style={styles.optionText}>Other</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-      {/* Continue Button */}
-      <TouchableOpacity
-        onPress={() => navigation.navigate('AddYourCar')}
-        style={styles.continueButton}
-      >
-        <Text style={styles.continueText}>Continue</Text>
-      </TouchableOpacity>
+          {/* Profile Picture Section */}
+          <Text style={styles.sectionTitle}>Profile Picture</Text>
 
-      {/* Next Text */}
-      <TouchableOpacity>
-        <Text style={styles.nextText}>Next</Text>
-      </TouchableOpacity>
+          <View style={styles.uploadBox}>
+            <Text style={styles.uploadTitle}>Upload a profile picture</Text>
+            <Text style={styles.uploadSubtitle}>
+              This helps other users recognize you.
+            </Text>
+
+            <TouchableOpacity style={styles.uploadButton}>
+              <Text style={styles.uploadButtonText}>Upload</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Continue Button */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AddYourCar')}
+            style={styles.continueButton}
+          >
+            <Text style={styles.continueText}>Continue</Text>
+          </TouchableOpacity>
+
+          {/* Next Text */}
+          <TouchableOpacity>
+            <Text style={styles.nextText}>Next</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

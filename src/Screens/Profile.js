@@ -13,6 +13,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -343,71 +344,78 @@ const Profile = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Update Profile</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity onPress={handleImagePick} style={styles.modalImagePicker}>
-              {editImage ? (
-                <Image source={{ uri: editImage.path }} style={styles.modalImage} />
-              ) : (
-                userData?.profile_picture ?
-                  <Image source={{ uri: userData.profile_picture.startsWith('http') ? userData.profile_picture : `${IMG_URL}${userData.profile_picture}` }} style={styles.modalImage} /> :
-                  <Icon name="camera" size={40} color="#ccc" />
-              )}
-              <View style={styles.cameraOverlay}>
-                <Icon name="camera" size={20} color="#fff" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : null}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Update Profile</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Icon name="close" size={24} color="#333" />
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Display Name</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Full Name"
-                value={editName}
-                onChangeText={setEditName}
-              />
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
+                <TouchableOpacity onPress={handleImagePick} style={styles.modalImagePicker}>
+                  {editImage ? (
+                    <Image source={{ uri: editImage.path }} style={styles.modalImage} />
+                  ) : (
+                    userData?.profile_picture ?
+                      <Image source={{ uri: userData.profile_picture.startsWith('http') ? userData.profile_picture : `${IMG_URL}${userData.profile_picture}` }} style={styles.modalImage} /> :
+                      <Icon name="camera" size={40} color="#ccc" />
+                  )}
+                  <View style={styles.cameraOverlay}>
+                    <Icon name="camera" size={20} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Display Name</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Full Name"
+                    value={editName}
+                    onChangeText={setEditName}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Gender</Text>
+                  <View style={styles.genderContainer}>
+                    {['male', 'female', 'other'].map((g) => (
+                      <TouchableOpacity
+                        key={g}
+                        onPress={() => setEditGender(g)}
+                        style={[styles.genderOption, editGender === g && styles.genderSelected]}
+                      >
+                        <Text style={[styles.genderText, editGender === g && { color: '#fff' }]}>
+                          {g.charAt(0).toUpperCase() + g.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Phone Number</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Phone Number"
+                    value={editPhone}
+                    onChangeText={setEditPhone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <TouchableOpacity onPress={handleUpdateProfile} style={styles.saveBtn}>
+                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Gender</Text>
-              <View style={styles.genderContainer}>
-                {['male', 'female', 'other'].map((g) => (
-                  <TouchableOpacity
-                    key={g}
-                    onPress={() => setEditGender(g)}
-                    style={[styles.genderOption, editGender === g && styles.genderSelected]}
-                  >
-                    <Text style={[styles.genderText, editGender === g && { color: '#fff' }]}>
-                      {g.charAt(0).toUpperCase() + g.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Phone Number"
-                value={editPhone}
-                onChangeText={setEditPhone}
-                keyboardType="phone-pad"
-              />
-            </View>
-
-            <TouchableOpacity onPress={handleUpdateProfile} style={styles.saveBtn}>
-              <Text style={styles.saveBtnText}>Save Changes</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
     </SafeAreaView>

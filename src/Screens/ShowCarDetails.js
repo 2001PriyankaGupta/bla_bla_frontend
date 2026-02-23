@@ -10,7 +10,8 @@ import {
     Image,
     Alert,
     ActivityIndicator,
-    TextInput
+    TextInput,
+    KeyboardAvoidingView
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -216,183 +217,189 @@ const ShowCarDetails = () => {
                 )}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <ScrollView contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
 
-                {/* Car Image */}
-                <View style={styles.imageContainer}>
-                    {isEditing ? (
-                        <TouchableOpacity onPress={() => requestImageSelection(setCarPhoto)}>
-                            {carPhoto ? (
-                                <Image source={{ uri: carPhoto.path }} style={styles.carImage} />
-                            ) : (
-                                <Image
-                                    source={{ uri: (carData.car_photo && carData.car_photo.startsWith('http')) ? carData.car_photo : `${IMG_URL}${carData.car_photo || ''}` }}
-                                    style={[styles.carImage, { opacity: 0.7 }]}
-                                />
-                            )}
-                            <View style={styles.editBadge}>
-                                <Icon name="camera" size={20} color="#fff" />
-                            </View>
-                        </TouchableOpacity>
-                    ) : (
-                        <Image
-                            source={{ uri: (carData.car_photo && carData.car_photo.startsWith('http')) ? carData.car_photo : `${IMG_URL}${carData.car_photo || ''}` }}
-                            style={styles.carImage}
-                        />
+                    {/* Car Image */}
+                    <View style={styles.imageContainer}>
+                        {isEditing ? (
+                            <TouchableOpacity onPress={() => requestImageSelection(setCarPhoto)}>
+                                {carPhoto ? (
+                                    <Image source={{ uri: carPhoto.path }} style={styles.carImage} />
+                                ) : (
+                                    <Image
+                                        source={{ uri: (carData.car_photo && carData.car_photo.startsWith('http')) ? carData.car_photo : `${IMG_URL}${carData.car_photo || ''}` }}
+                                        style={[styles.carImage, { opacity: 0.7 }]}
+                                    />
+                                )}
+                                <View style={styles.editBadge}>
+                                    <Icon name="camera" size={20} color="#fff" />
+                                </View>
+                            </TouchableOpacity>
+                        ) : (
+                            <Image
+                                source={{ uri: (carData.car_photo && carData.car_photo.startsWith('http')) ? carData.car_photo : `${IMG_URL}${carData.car_photo || ''}` }}
+                                style={styles.carImage}
+                            />
+                        )}
+                    </View>
+
+                    {/* Verification Status */}
+                    {!isEditing && (
+                        <View style={[styles.statusBanner, { backgroundColor: carData.license_verified === 'verified' ? '#e8f5e9' : '#fff3e0' }]}>
+                            <Icon name={carData.license_verified === 'verified' ? "check-circle" : "alert-circle-outline"} size={20} color={carData.license_verified === 'verified' ? "#4caf50" : "#ff9800"} />
+                            <Text style={[styles.statusText, { color: carData.license_verified === 'verified' ? "#2e7d32" : "#ef6c00" }]}>
+                                Verification Status: {carData.license_verified ? carData.license_verified.toUpperCase() : 'PENDING'}
+                            </Text>
+                        </View>
                     )}
-                </View>
-
-                {/* Verification Status */}
-                {!isEditing && (
-                    <View style={[styles.statusBanner, { backgroundColor: carData.license_verified === 'verified' ? '#e8f5e9' : '#fff3e0' }]}>
-                        <Icon name={carData.license_verified === 'verified' ? "check-circle" : "alert-circle-outline"} size={20} color={carData.license_verified === 'verified' ? "#4caf50" : "#ff9800"} />
-                        <Text style={[styles.statusText, { color: carData.license_verified === 'verified' ? "#2e7d32" : "#ef6c00" }]}>
-                            Verification Status: {carData.license_verified ? carData.license_verified.toUpperCase() : 'PENDING'}
-                        </Text>
-                    </View>
-                )}
 
 
-                {/* Details Form/View */}
-                <View style={styles.detailsContainer}>
+                    {/* Details Form/View */}
+                    <View style={styles.detailsContainer}>
 
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Make</Text>
-                        {isEditing ? (
-                            <TextInput style={styles.input} value={carMake} onChangeText={setCarMake} />
-                        ) : (
-                            <Text style={styles.value}>{carData.car_make}</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Model</Text>
-                        {isEditing ? (
-                            <TextInput style={styles.input} value={carModel} onChangeText={setCarModel} />
-                        ) : (
-                            <Text style={styles.value}>{carData.car_model}</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Year</Text>
-                        {isEditing ? (
-                            <TextInput style={styles.input} value={carYear} onChangeText={setCarYear} keyboardType="numeric" />
-                        ) : (
-                            <Text style={styles.value}>{carData.car_year}</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Color</Text>
-                        {isEditing ? (
-                            <TextInput style={styles.input} value={carColor} onChangeText={setCarColor} />
-                        ) : (
-                            <Text style={styles.value}>{carData.car_color}</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>License Plate</Text>
-                        {isEditing ? (
-                            <TextInput style={styles.input} value={licensePlate} onChangeText={setLicensePlate} />
-                        ) : (
-                            <Text style={styles.value}>{carData.licence_plate}</Text>
-                        )}
-                    </View>
-
-                    {/* License Photos Section */}
-                    <Text style={styles.sectionTitle}>Driver's License</Text>
-
-                    <View style={styles.licenseRow}>
-                        <View style={styles.licenseItem}>
-                            <Text style={styles.label}>Front</Text>
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.label}>Make</Text>
                             {isEditing ? (
-                                <TouchableOpacity onPress={() => requestImageSelection(setLicenseFront)} style={styles.licenseTouch}>
-                                    {licenseFront ? (
-                                        <Image source={{ uri: licenseFront.path }} style={styles.licenseImage} />
-                                    ) : (
-                                        carData.driver_license_front ? (
-                                            <Image
-                                                source={{ uri: (carData.driver_license_front.startsWith('http')) ? carData.driver_license_front : `${IMG_URL}${carData.driver_license_front}` }}
-                                                style={[styles.licenseImage, { opacity: 0.7 }]}
-                                            />
-                                        ) : (
-                                            <Icon name="card-account-details-outline" size={40} color="#ccc" />
-                                        )
-                                    )}
-                                    <View style={styles.editBadgeSmall}>
-                                        <Icon name="camera" size={14} color="#fff" />
-                                    </View>
-                                </TouchableOpacity>
+                                <TextInput style={styles.input} value={carMake} onChangeText={setCarMake} />
                             ) : (
-                                carData.driver_license_front ? (
-                                    <Image
-                                        source={{ uri: (carData.driver_license_front.startsWith('http')) ? carData.driver_license_front : `${IMG_URL}${carData.driver_license_front}` }}
-                                        style={styles.licenseImage}
-                                    />
-                                ) : (
-                                    <View style={styles.noImagePlaceholder}>
-                                        <Text style={{ color: '#999' }}>No Image</Text>
-                                    </View>
-                                )
+                                <Text style={styles.value}>{carData.car_make}</Text>
                             )}
                         </View>
 
-                        <View style={styles.licenseItem}>
-                            <Text style={styles.label}>Back</Text>
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.label}>Model</Text>
                             {isEditing ? (
-                                <TouchableOpacity onPress={() => requestImageSelection(setLicenseBack)} style={styles.licenseTouch}>
-                                    {licenseBack ? (
-                                        <Image source={{ uri: licenseBack.path }} style={styles.licenseImage} />
-                                    ) : (
-                                        carData.driver_license_back ? (
-                                            <Image
-                                                source={{ uri: (carData.driver_license_back.startsWith('http')) ? carData.driver_license_back : `${IMG_URL}${carData.driver_license_back}` }}
-                                                style={[styles.licenseImage, { opacity: 0.7 }]}
-                                            />
-                                        ) : (
-                                            <Icon name="card-account-details-outline" size={40} color="#ccc" />
-                                        )
-                                    )}
-                                    <View style={styles.editBadgeSmall}>
-                                        <Icon name="camera" size={14} color="#fff" />
-                                    </View>
-                                </TouchableOpacity>
+                                <TextInput style={styles.input} value={carModel} onChangeText={setCarModel} />
                             ) : (
-                                carData.driver_license_back ? (
-                                    <Image
-                                        source={{ uri: (carData.driver_license_back.startsWith('http')) ? carData.driver_license_back : `${IMG_URL}${carData.driver_license_back}` }}
-                                        style={styles.licenseImage}
-                                    />
-                                ) : (
-                                    <View style={styles.noImagePlaceholder}>
-                                        <Text style={{ color: '#999' }}>No Image</Text>
-                                    </View>
-                                )
+                                <Text style={styles.value}>{carData.car_model}</Text>
                             )}
                         </View>
+
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.label}>Year</Text>
+                            {isEditing ? (
+                                <TextInput style={styles.input} value={carYear} onChangeText={setCarYear} keyboardType="numeric" />
+                            ) : (
+                                <Text style={styles.value}>{carData.car_year}</Text>
+                            )}
+                        </View>
+
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.label}>Color</Text>
+                            {isEditing ? (
+                                <TextInput style={styles.input} value={carColor} onChangeText={setCarColor} />
+                            ) : (
+                                <Text style={styles.value}>{carData.car_color}</Text>
+                            )}
+                        </View>
+
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.label}>License Plate</Text>
+                            {isEditing ? (
+                                <TextInput style={styles.input} value={licensePlate} onChangeText={setLicensePlate} />
+                            ) : (
+                                <Text style={styles.value}>{carData.licence_plate}</Text>
+                            )}
+                        </View>
+
+                        {/* License Photos Section */}
+                        <Text style={styles.sectionTitle}>Driver's License</Text>
+
+                        <View style={styles.licenseRow}>
+                            <View style={styles.licenseItem}>
+                                <Text style={styles.label}>Front</Text>
+                                {isEditing ? (
+                                    <TouchableOpacity onPress={() => requestImageSelection(setLicenseFront)} style={styles.licenseTouch}>
+                                        {licenseFront ? (
+                                            <Image source={{ uri: licenseFront.path }} style={styles.licenseImage} />
+                                        ) : (
+                                            carData.driver_license_front ? (
+                                                <Image
+                                                    source={{ uri: (carData.driver_license_front.startsWith('http')) ? carData.driver_license_front : `${IMG_URL}${carData.driver_license_front}` }}
+                                                    style={[styles.licenseImage, { opacity: 0.7 }]}
+                                                />
+                                            ) : (
+                                                <Icon name="card-account-details-outline" size={40} color="#ccc" />
+                                            )
+                                        )}
+                                        <View style={styles.editBadgeSmall}>
+                                            <Icon name="camera" size={14} color="#fff" />
+                                        </View>
+                                    </TouchableOpacity>
+                                ) : (
+                                    carData.driver_license_front ? (
+                                        <Image
+                                            source={{ uri: (carData.driver_license_front.startsWith('http')) ? carData.driver_license_front : `${IMG_URL}${carData.driver_license_front}` }}
+                                            style={styles.licenseImage}
+                                        />
+                                    ) : (
+                                        <View style={styles.noImagePlaceholder}>
+                                            <Text style={{ color: '#999' }}>No Image</Text>
+                                        </View>
+                                    )
+                                )}
+                            </View>
+
+                            <View style={styles.licenseItem}>
+                                <Text style={styles.label}>Back</Text>
+                                {isEditing ? (
+                                    <TouchableOpacity onPress={() => requestImageSelection(setLicenseBack)} style={styles.licenseTouch}>
+                                        {licenseBack ? (
+                                            <Image source={{ uri: licenseBack.path }} style={styles.licenseImage} />
+                                        ) : (
+                                            carData.driver_license_back ? (
+                                                <Image
+                                                    source={{ uri: (carData.driver_license_back.startsWith('http')) ? carData.driver_license_back : `${IMG_URL}${carData.driver_license_back}` }}
+                                                    style={[styles.licenseImage, { opacity: 0.7 }]}
+                                                />
+                                            ) : (
+                                                <Icon name="card-account-details-outline" size={40} color="#ccc" />
+                                            )
+                                        )}
+                                        <View style={styles.editBadgeSmall}>
+                                            <Icon name="camera" size={14} color="#fff" />
+                                        </View>
+                                    </TouchableOpacity>
+                                ) : (
+                                    carData.driver_license_back ? (
+                                        <Image
+                                            source={{ uri: (carData.driver_license_back.startsWith('http')) ? carData.driver_license_back : `${IMG_URL}${carData.driver_license_back}` }}
+                                            style={styles.licenseImage}
+                                        />
+                                    ) : (
+                                        <View style={styles.noImagePlaceholder}>
+                                            <Text style={{ color: '#999' }}>No Image</Text>
+                                        </View>
+                                    )
+                                )}
+                            </View>
+                        </View>
+
                     </View>
 
-                </View>
-
-                {isEditing ? (
-                    <View style={styles.actionButtons}>
-                        <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelButton}>
-                            <Text style={styles.cancelText}>Cancel</Text>
+                    {isEditing ? (
+                        <View style={[styles.actionButtons, { paddingHorizontal: 20 }]}>
+                            <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelButton}>
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleUpdate} style={styles.saveButton} disabled={submitting}>
+                                <Text style={styles.saveText}>{submitting ? 'Saving...' : 'Save Changes'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity onPress={handleDelete} style={[styles.deleteButton, { marginHorizontal: 20 }]}>
+                            <Icon name="delete" size={20} color="#fff" />
+                            <Text style={styles.deleteText}>Delete Car</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={handleUpdate} style={styles.saveButton} disabled={submitting}>
-                            <Text style={styles.saveText}>{submitting ? 'Saving...' : 'Save Changes'}</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                        <Icon name="delete" size={20} color="#fff" />
-                        <Text style={styles.deleteText}>Delete Car</Text>
-                    </TouchableOpacity>
-                )}
+                    )}
 
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
         </SafeAreaView>
     );

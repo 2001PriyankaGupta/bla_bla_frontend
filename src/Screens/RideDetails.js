@@ -9,7 +9,8 @@ import {
     Alert,
     ActivityIndicator,
     TextInput,
-    Switch
+    Switch,
+    KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect } from 'react';
@@ -309,263 +310,269 @@ const RideDetails = () => {
                 )}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <ScrollView contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
 
-                {/* Route Header Card */}
-                <View style={styles.routeCard}>
-                    <View style={styles.routeRow}>
-                        <Icon name="map-marker" size={20} color="#248907" />
-                        <Text style={styles.routePoint}>{rideData.pickup_point}</Text>
+                    {/* Route Header Card */}
+                    <View style={styles.routeCard}>
+                        <View style={styles.routeRow}>
+                            <Icon name="map-marker" size={20} color="#248907" />
+                            <Text style={styles.routePoint}>{rideData.pickup_point}</Text>
+                        </View>
+                        <View style={styles.routeConnector}>
+                            <View style={styles.dottedLine} />
+                            <Icon name="arrow-down" size={16} color="#aaa" />
+                        </View>
+                        <View style={styles.routeRow}>
+                            <Icon name="map-marker-check" size={20} color="#248907" />
+                            <Text style={styles.routePoint}>{rideData.drop_point}</Text>
+                        </View>
                     </View>
-                    <View style={styles.routeConnector}>
-                        <View style={styles.dottedLine} />
-                        <Icon name="arrow-down" size={16} color="#aaa" />
-                    </View>
-                    <View style={styles.routeRow}>
-                        <Icon name="map-marker-check" size={20} color="#248907" />
-                        <Text style={styles.routePoint}>{rideData.drop_point}</Text>
-                    </View>
-                </View>
 
-                {/* Date & Price Card */}
-                <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
-                            <Icon name="calendar-clock" size={22} color="#555" />
-                            <View style={{ marginLeft: 10 }}>
-                                <Text style={styles.infoLabel}>Date & Time</Text>
-                                <Text style={styles.infoValue}>{formatDateTime(rideData.date_time)}</Text>
+                    {/* Date & Price Card */}
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoRow}>
+                            <View style={styles.infoItem}>
+                                <Icon name="calendar-clock" size={22} color="#555" />
+                                <View style={{ marginLeft: 10 }}>
+                                    <Text style={styles.infoLabel}>Date & Time</Text>
+                                    <Text style={styles.infoValue}>{formatDateTime(rideData.date_time)}</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <View style={styles.divider} />
+                        <View style={styles.infoRow}>
+                            <View style={styles.infoItem}>
+                                <Icon name="cash" size={22} color="#555" />
+                                <View style={{ marginLeft: 10 }}>
+                                    <Text style={styles.infoLabel}>Price per Seat</Text>
+                                    <Text style={styles.infoValue}>₹{rideData.price_per_seat}</Text>
+                                </View>
+                            </View>
+                            <View style={styles.infoItem}>
+                                <Icon name="car-seat" size={22} color="#555" />
+                                <View style={{ marginLeft: 10 }}>
+                                    <Text style={styles.infoLabel}>Seats</Text>
+                                    <Text style={styles.infoValue}>{rideData.total_seats}</Text>
+                                </View>
                             </View>
                         </View>
                     </View>
-                    <View style={styles.divider} />
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
-                            <Icon name="cash" size={22} color="#555" />
-                            <View style={{ marginLeft: 10 }}>
-                                <Text style={styles.infoLabel}>Price per Seat</Text>
-                                <Text style={styles.infoValue}>₹{rideData.price_per_seat}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Icon name="car-seat" size={22} color="#555" />
-                            <View style={{ marginLeft: 10 }}>
-                                <Text style={styles.infoLabel}>Seats</Text>
-                                <Text style={styles.infoValue}>{rideData.total_seats}</Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
 
-                {/* Car Details Card */}
-                <View style={styles.infoCard}>
-                    <Text style={styles.cardTitle}>Car Details</Text>
-                    <View style={styles.carInfoRow}>
-                        <Icon name="car" size={24} color="#248907" />
-                        <View style={{ marginLeft: 15 }}>
-                            {rideData.car ? (
-                                <>
-                                    <Text style={styles.carName}>{rideData.car.car_make} {rideData.car.car_model}</Text>
-                                    <Text style={styles.carDetailText}>{rideData.car.car_color} • {rideData.car.car_year}</Text>
-                                    <View style={styles.plateBox}>
-                                        <Text style={styles.plateText}>{rideData.car.licence_plate}</Text>
+                    {/* Car Details Card */}
+                    <View style={styles.infoCard}>
+                        <Text style={styles.cardTitle}>Car Details</Text>
+                        <View style={styles.carInfoRow}>
+                            <Icon name="car" size={24} color="#248907" />
+                            <View style={{ marginLeft: 15 }}>
+                                {rideData.car ? (
+                                    <>
+                                        <Text style={styles.carName}>{rideData.car.car_make} {rideData.car.car_model}</Text>
+                                        <Text style={styles.carDetailText}>{rideData.car.car_color} • {rideData.car.car_year}</Text>
+                                        <View style={styles.plateBox}>
+                                            <Text style={styles.plateText}>{rideData.car.licence_plate}</Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <Text style={styles.carName}>{rideData.car_make || 'No Car Details'}</Text>
+                                )}
+                            </View>
+                        </View>
+
+                        {rideData.luggage_allowed && (
+                            <View style={styles.luggageRow}>
+                                <Icon name="bag-suitcase" size={20} color="#248907" />
+                                <Text style={{ marginLeft: 10, fontSize: 14, color: '#333' }}>Luggage Allowed</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Edit Form - Only shown when isEditing is true */}
+                    {isEditing && (
+                        <View style={styles.editContainer}>
+                            <Text style={styles.editTitle}>Edit Details</Text>
+
+                            <View style={[styles.fieldContainer, { zIndex: 20 }]}>
+                                <Text style={styles.label}>Pickup Point</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={pickup}
+                                    onChangeText={(text) => {
+                                        setPickup(text);
+                                        fetchSuggestions(text, 'pickup');
+                                    }}
+                                />
+                                {pickupSuggestions.length > 0 && (
+                                    <View style={styles.suggestionsContainer}>
+                                        <ScrollView keyboardShouldPersistTaps="always">
+                                            {pickupSuggestions.map((item, index) => (
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={styles.suggestionItem}
+                                                    onPress={() => handleSelectSuggestion(item, 'pickup')}
+                                                >
+                                                    <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
+                                                    <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
                                     </View>
-                                </>
-                            ) : (
-                                <Text style={styles.carName}>{rideData.car_make || 'No Car Details'}</Text>
-                            )}
-                        </View>
-                    </View>
+                                )}
+                            </View>
 
-                    {rideData.luggage_allowed && (
-                        <View style={styles.luggageRow}>
-                            <Icon name="bag-suitcase" size={20} color="#248907" />
-                            <Text style={{ marginLeft: 10, fontSize: 14, color: '#333' }}>Luggage Allowed</Text>
+                            <View style={[styles.fieldContainer, { zIndex: 19 }]}>
+                                <Text style={styles.label}>Drop Point</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={drop}
+                                    onChangeText={(text) => {
+                                        setDrop(text);
+                                        fetchSuggestions(text, 'drop');
+                                    }}
+                                />
+                                {dropSuggestions.length > 0 && (
+                                    <View style={styles.suggestionsContainer}>
+                                        <ScrollView keyboardShouldPersistTaps="always">
+                                            {dropSuggestions.map((item, index) => (
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={styles.suggestionItem}
+                                                    onPress={() => handleSelectSuggestion(item, 'drop')}
+                                                >
+                                                    <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
+                                                    <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                )}
+                            </View>
+
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Date & Time</Text>
+                                <TouchableOpacity
+                                    style={[styles.input, { justifyContent: 'center' }]}
+                                    onPress={() => setOpen(true)}
+                                >
+                                    <Text style={{ color: '#000' }}>
+                                        {date.toLocaleString()}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.row}>
+                                <View style={[styles.fieldContainer, { flex: 1, marginRight: 10 }]}>
+                                    <Text style={styles.label}>Total Seats</Text>
+                                    <TextInput style={styles.input} value={seats} onChangeText={setSeats} keyboardType="numeric" />
+                                </View>
+                                <View style={[styles.fieldContainer, { flex: 1, marginLeft: 10 }]}>
+                                    <Text style={styles.label}>Price/Seat</Text>
+                                    <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" />
+                                </View>
+                            </View>
+
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Select Car</Text>
+                                <TouchableOpacity
+                                    style={styles.dropdownButton}
+                                    onPress={() => setShowCarDropdown(!showCarDropdown)}
+                                >
+                                    <Text style={styles.dropdownButtonText}>
+                                        {selectedCarId
+                                            ? (() => {
+                                                const car = userCars.find(c => c.id === selectedCarId);
+                                                return car ? `${car.car_make} ${car.car_model}` : "Select Your Car";
+                                            })()
+                                            : "Select Your Car"}
+                                    </Text>
+                                    <Icon name={showCarDropdown ? "chevron-up" : "chevron-down"} size={24} color="#555" />
+                                </TouchableOpacity>
+
+                                {showCarDropdown && (
+                                    <View style={styles.dropdownList}>
+                                        {userCars.length > 0 ? (
+                                            userCars.map((car) => (
+                                                <TouchableOpacity
+                                                    key={car.id}
+                                                    style={styles.dropdownItem}
+                                                    onPress={() => {
+                                                        setSelectedCarId(car.id);
+                                                        setShowCarDropdown(false);
+                                                    }}
+                                                >
+                                                    <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
+                                                    <Text style={styles.dropdownItemText}>
+                                                        {car.car_make} {car.car_model} ({car.licence_plate})
+                                                    </Text>
+                                                    {selectedCarId === car.id && (
+                                                        <Icon name="check" size={20} color="#248907" style={{ marginLeft: 'auto' }} />
+                                                    )}
+                                                </TouchableOpacity>
+                                            ))
+                                        ) : (
+                                            <TouchableOpacity onPress={() => navigation.navigate('AddYourCar')} style={styles.dropdownItem}>
+                                                <Text style={[styles.dropdownItemText, { color: '#248907' }]}>+ Add a New Car</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                )}
+                            </View>
+
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.label}>Ride Status</Text>
+                                <View style={{ flexDirection: 'row' }}>
+                                    <TouchableOpacity
+                                        style={[styles.statusButton, status === 'active' && styles.activeStatus]}
+                                        onPress={() => setStatus('active')}
+                                    >
+                                        <Text style={[styles.statusText, status === 'active' && { color: '#fff' }]}>Active</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.statusButton, status === 'inactive' && styles.inactiveStatus]}
+                                        onPress={() => setStatus('inactive')}
+                                    >
+                                        <Text style={[styles.statusText, status === 'inactive' && { color: '#fff' }]}>Inactive</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <DatePicker
+                                modal
+                                open={open}
+                                date={date}
+                                onConfirm={(date) => {
+                                    setOpen(false)
+                                    setDate(date)
+                                    setDateTime(formatDateForApi(date))
+                                }}
+                                onCancel={() => {
+                                    setOpen(false)
+                                }}
+                            />
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelButton}>
+                                    <Text style={styles.cancelText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={handleUpdate} style={styles.saveButton} disabled={submitting}>
+                                    <Text style={styles.saveText}>{submitting ? 'Saving...' : 'Save Changes'}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     )}
-                </View>
 
-                {/* Edit Form - Only shown when isEditing is true */}
-                {isEditing && (
-                    <View style={styles.editContainer}>
-                        <Text style={styles.editTitle}>Edit Details</Text>
+                    {!isEditing && (
+                        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+                            <Icon name="delete" size={20} color="#fff" />
+                            <Text style={styles.deleteText}>Cancel Ride</Text>
+                        </TouchableOpacity>
+                    )}
 
-                        <View style={[styles.fieldContainer, { zIndex: 20 }]}>
-                            <Text style={styles.label}>Pickup Point</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={pickup}
-                                onChangeText={(text) => {
-                                    setPickup(text);
-                                    fetchSuggestions(text, 'pickup');
-                                }}
-                            />
-                            {pickupSuggestions.length > 0 && (
-                                <View style={styles.suggestionsContainer}>
-                                    <ScrollView keyboardShouldPersistTaps="always">
-                                        {pickupSuggestions.map((item, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={styles.suggestionItem}
-                                                onPress={() => handleSelectSuggestion(item, 'pickup')}
-                                            >
-                                                <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </ScrollView>
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={[styles.fieldContainer, { zIndex: 19 }]}>
-                            <Text style={styles.label}>Drop Point</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={drop}
-                                onChangeText={(text) => {
-                                    setDrop(text);
-                                    fetchSuggestions(text, 'drop');
-                                }}
-                            />
-                            {dropSuggestions.length > 0 && (
-                                <View style={styles.suggestionsContainer}>
-                                    <ScrollView keyboardShouldPersistTaps="always">
-                                        {dropSuggestions.map((item, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={styles.suggestionItem}
-                                                onPress={() => handleSelectSuggestion(item, 'drop')}
-                                            >
-                                                <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </ScrollView>
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Date & Time</Text>
-                            <TouchableOpacity
-                                style={[styles.input, { justifyContent: 'center' }]}
-                                onPress={() => setOpen(true)}
-                            >
-                                <Text style={{ color: '#000' }}>
-                                    {date.toLocaleString()}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.row}>
-                            <View style={[styles.fieldContainer, { flex: 1, marginRight: 10 }]}>
-                                <Text style={styles.label}>Total Seats</Text>
-                                <TextInput style={styles.input} value={seats} onChangeText={setSeats} keyboardType="numeric" />
-                            </View>
-                            <View style={[styles.fieldContainer, { flex: 1, marginLeft: 10 }]}>
-                                <Text style={styles.label}>Price/Seat</Text>
-                                <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" />
-                            </View>
-                        </View>
-
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Select Car</Text>
-                            <TouchableOpacity
-                                style={styles.dropdownButton}
-                                onPress={() => setShowCarDropdown(!showCarDropdown)}
-                            >
-                                <Text style={styles.dropdownButtonText}>
-                                    {selectedCarId
-                                        ? (() => {
-                                            const car = userCars.find(c => c.id === selectedCarId);
-                                            return car ? `${car.car_make} ${car.car_model}` : "Select Your Car";
-                                        })()
-                                        : "Select Your Car"}
-                                </Text>
-                                <Icon name={showCarDropdown ? "chevron-up" : "chevron-down"} size={24} color="#555" />
-                            </TouchableOpacity>
-
-                            {showCarDropdown && (
-                                <View style={styles.dropdownList}>
-                                    {userCars.length > 0 ? (
-                                        userCars.map((car) => (
-                                            <TouchableOpacity
-                                                key={car.id}
-                                                style={styles.dropdownItem}
-                                                onPress={() => {
-                                                    setSelectedCarId(car.id);
-                                                    setShowCarDropdown(false);
-                                                }}
-                                            >
-                                                <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
-                                                <Text style={styles.dropdownItemText}>
-                                                    {car.car_make} {car.car_model} ({car.licence_plate})
-                                                </Text>
-                                                {selectedCarId === car.id && (
-                                                    <Icon name="check" size={20} color="#248907" style={{ marginLeft: 'auto' }} />
-                                                )}
-                                            </TouchableOpacity>
-                                        ))
-                                    ) : (
-                                        <TouchableOpacity onPress={() => navigation.navigate('AddYourCar')} style={styles.dropdownItem}>
-                                            <Text style={[styles.dropdownItemText, { color: '#248907' }]}>+ Add a New Car</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Ride Status</Text>
-                            <View style={{ flexDirection: 'row' }}>
-                                <TouchableOpacity
-                                    style={[styles.statusButton, status === 'active' && styles.activeStatus]}
-                                    onPress={() => setStatus('active')}
-                                >
-                                    <Text style={[styles.statusText, status === 'active' && { color: '#fff' }]}>Active</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.statusButton, status === 'inactive' && styles.inactiveStatus]}
-                                    onPress={() => setStatus('inactive')}
-                                >
-                                    <Text style={[styles.statusText, status === 'inactive' && { color: '#fff' }]}>Inactive</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <DatePicker
-                            modal
-                            open={open}
-                            date={date}
-                            onConfirm={(date) => {
-                                setOpen(false)
-                                setDate(date)
-                                setDateTime(formatDateForApi(date))
-                            }}
-                            onCancel={() => {
-                                setOpen(false)
-                            }}
-                        />
-                        <View style={styles.actionButtons}>
-                            <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelButton}>
-                                <Text style={styles.cancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={handleUpdate} style={styles.saveButton} disabled={submitting}>
-                                <Text style={styles.saveText}>{submitting ? 'Saving...' : 'Save Changes'}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                )}
-
-                {!isEditing && (
-                    <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                        <Icon name="delete" size={20} color="#fff" />
-                        <Text style={styles.deleteText}>Cancel Ride</Text>
-                    </TouchableOpacity>
-                )}
-
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
         </SafeAreaView>
     );

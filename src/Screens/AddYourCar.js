@@ -256,7 +256,7 @@ const AddYourCar = () => {
         ) : (
           <View style={{ flex: 1, paddingHorizontal: 20 }}>
             {/* Reuse the ScrollView Form structure */}
-            <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 150, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
               {step === 1 ? (
                 <>
                   <Text style={styles.formTitle}>Car Details</Text>

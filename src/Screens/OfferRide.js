@@ -11,7 +11,8 @@ import {
   FlatList,
   Alert,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TouchableOpacity } from 'react-native';
@@ -356,217 +357,222 @@ const OfferRide = () => {
       </View>
 
       {/* Content */}
-      <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
-        {activeTab === 'list' ? (
-          loading && !refreshing ? (
-            <ActivityIndicator size="large" color="#248907" style={{ marginTop: 50 }} />
-          ) : (
-            <FlatList
-              data={myRides}
-              renderItem={renderRideItem}
-              keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
-              contentContainerStyle={{ padding: 15 }}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Icon name="car-off" size={60} color="#ccc" />
-                  <Text style={styles.emptyText}>No rides offered yet.</Text>
-                  <TouchableOpacity onPress={() => setActiveTab('offer')} style={styles.addFirstBtn}>
-                    <Text style={styles.addFirstBtnText}>Offer Your First Ride</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-            />
-          )
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
-            <View style={styles.formContainer}>
-              <Text style={styles.createTitle}>Create New Ride</Text>
-
-              <View style={{ zIndex: 20 }}>
-                <TextInput
-                  placeholder="Pickup Point"
-                  placeholderTextColor="#777"
-                  style={styles.input}
-                  value={pickup}
-                  onChangeText={(text) => {
-                    setPickup(text);
-                    fetchSuggestions(text, 'pickup');
-                  }}
-                />
-                {pickupSuggestions.length > 0 && (
-                  <View style={styles.suggestionsContainer}>
-                    <ScrollView keyboardShouldPersistTaps="always">
-                      {pickupSuggestions.map((item, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.suggestionItem}
-                          onPress={() => handleSelectSuggestion(item, 'pickup')}
-                        >
-                          <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                          <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              <View style={{ zIndex: 10 }}>
-                <TextInput
-                  placeholder="Drop Point"
-                  placeholderTextColor="#777"
-                  style={styles.input}
-                  value={drop}
-                  onChangeText={(text) => {
-                    setDrop(text);
-                    fetchSuggestions(text, 'drop');
-                  }}
-                />
-                {dropSuggestions.length > 0 && (
-                  <View style={styles.suggestionsContainer}>
-                    <ScrollView keyboardShouldPersistTaps="always">
-                      {dropSuggestions.map((item, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.suggestionItem}
-                          onPress={() => handleSelectSuggestion(item, 'drop')}
-                        >
-                          <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                          <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-              <TouchableOpacity onPress={() => setOpen(true)} style={styles.dateButton}>
-                <Text style={[styles.dateButtonText, !dateTime && { color: '#777' }]}>
-                  {dateTime ? dateTime : "Select Date & Time"}
-                </Text>
-                <Icon name="calendar" size={20} color="#248907" />
-              </TouchableOpacity>
-
-              <DatePicker
-                modal
-                open={open}
-                date={date}
-                onConfirm={(date) => {
-                  setOpen(false)
-                  setDate(date)
-                  // Format: YYYY-MM-DD HH:MM:SS
-                  const year = date.getFullYear();
-                  const month = String(date.getMonth() + 1).padStart(2, '0');
-                  const day = String(date.getDate()).padStart(2, '0');
-                  const hours = String(date.getHours()).padStart(2, '0');
-                  const minutes = String(date.getMinutes()).padStart(2, '0');
-                  const seconds = String(date.getSeconds()).padStart(2, '0');
-                  const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-                  setDateTime(formattedDate)
-                }}
-                onCancel={() => {
-                  setOpen(false)
-                }}
-              />
-
-              <View style={styles.row}>
-                <TextInput
-                  placeholder="Total Seats"
-                  placeholderTextColor="#777"
-                  keyboardType="numeric"
-                  style={[styles.input, { flex: 1, marginRight: 5 }]}
-                  value={seats}
-                  onChangeText={setSeats}
-                />
-                <TextInput
-                  placeholder="Price/Seat"
-                  placeholderTextColor="#777"
-                  keyboardType="numeric"
-                  style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                  value={price}
-                  onChangeText={setPrice}
-                />
-              </View>
-
-              {/* ── Verified Cars Only Label ── */}
-              <Text style={styles.label}>Select Car</Text>
-              {/* Info: only verified cars shown */}
-              {userCars.length > 0 && userCars.filter(c => c.license_verified === 'verified').length === 0 && (
-                <View style={styles.noVerifiedBanner}>
-                  <Icon name="shield-alert-outline" size={26} color="#e67e22" />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.noVerifiedTitle}>Car Not Verified Yet</Text>
-                    <Text style={styles.noVerifiedSub}>
-                      Your car and driving license have not been verified by the admin yet.
-                      You will be able to offer rides only after your car's license is approved.{"\n\n"}
-                      Please wait for admin verification or contact support for assistance.
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-
-              {/* Only show dropdown if at least one verified car exists */}
-              {userCars.filter(c => c.license_verified === 'verified').length > 0 && (
-                <TouchableOpacity
-                  style={styles.dropdownButton}
-                  onPress={() => setShowCarDropdown(!showCarDropdown)}
-                >
-                  <Text style={styles.dropdownButtonText}>
-                    {selectedCarId
-                      ? userCars.find(c => c.id === selectedCarId)?.car_make + ' ' + userCars.find(c => c.id === selectedCarId)?.car_model
-                      : 'Select Verified Car'}
-                  </Text>
-                  <Icon name={showCarDropdown ? 'chevron-up' : 'chevron-down'} size={24} color="#555" />
-                </TouchableOpacity>
-              )}
-
-              {showCarDropdown && (
-                <View style={styles.dropdownList}>
-                  {/* ONLY admin-verified cars shown — unverified cars completely hidden */}
-                  {userCars.filter(c => c.license_verified === 'verified').map((car) => (
-                    <TouchableOpacity
-                      key={car.id}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setSelectedCarId(car.id);
-                        setShowCarDropdown(false);
-                      }}
-                    >
-                      <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.dropdownItemText}>
-                          {car.car_make} {car.car_model} ({car.licence_plate})
-                        </Text>
-                        <View style={styles.badgeVerified}>
-                          <Text style={styles.verBadgeText}>Verified</Text>
-                        </View>
-                      </View>
-                      {selectedCarId === car.id && (
-                        <Icon name="check" size={20} color="#248907" />
-                      )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <View style={{ flex: 1, backgroundColor: '#f3f3f3' }}>
+          {activeTab === 'list' ? (
+            loading && !refreshing ? (
+              <ActivityIndicator size="large" color="#248907" style={{ marginTop: 50 }} />
+            ) : (
+              <FlatList
+                data={myRides}
+                renderItem={renderRideItem}
+                keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
+                contentContainerStyle={{ padding: 15 }}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Icon name="car-off" size={60} color="#ccc" />
+                    <Text style={styles.emptyText}>No rides offered yet.</Text>
+                    <TouchableOpacity onPress={() => setActiveTab('offer')} style={styles.addFirstBtn}>
+                      <Text style={styles.addFirstBtnText}>Offer Your First Ride</Text>
                     </TouchableOpacity>
-                  ))}
+                  </View>
+                }
+              />
+            )
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }} keyboardShouldPersistTaps="always">
+              <View style={styles.formContainer}>
+                <Text style={styles.createTitle}>Create New Ride</Text>
+
+                <View style={{ zIndex: 20 }}>
+                  <TextInput
+                    placeholder="Pickup Point"
+                    placeholderTextColor="#777"
+                    style={styles.input}
+                    value={pickup}
+                    onChangeText={(text) => {
+                      setPickup(text);
+                      fetchSuggestions(text, 'pickup');
+                    }}
+                  />
+                  {pickupSuggestions.length > 0 && (
+                    <View style={styles.suggestionsContainer}>
+                      <ScrollView keyboardShouldPersistTaps="always">
+                        {pickupSuggestions.map((item, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => handleSelectSuggestion(item, 'pickup')}
+                          >
+                            <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
+                            <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
-              )}
 
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Luggage Allowed</Text>
-                <Switch
-                  value={luggage}
-                  onValueChange={setLuggage}
-                  trackColor={{ false: "#767577", true: "#81b0ff" }}
-                  thumbColor={luggage ? "#248907" : "#f4f3f4"}
+                <View style={{ zIndex: 10 }}>
+                  <TextInput
+                    placeholder="Drop Point"
+                    placeholderTextColor="#777"
+                    style={styles.input}
+                    value={drop}
+                    onChangeText={(text) => {
+                      setDrop(text);
+                      fetchSuggestions(text, 'drop');
+                    }}
+                  />
+                  {dropSuggestions.length > 0 && (
+                    <View style={styles.suggestionsContainer}>
+                      <ScrollView keyboardShouldPersistTaps="always">
+                        {dropSuggestions.map((item, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => handleSelectSuggestion(item, 'drop')}
+                          >
+                            <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
+                            <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => setOpen(true)} style={styles.dateButton}>
+                  <Text style={[styles.dateButtonText, !dateTime && { color: '#777' }]}>
+                    {dateTime ? dateTime : "Select Date & Time"}
+                  </Text>
+                  <Icon name="calendar" size={20} color="#248907" />
+                </TouchableOpacity>
+
+                <DatePicker modal
+                  open={open}
+                  date={date}
+                  onConfirm={(date) => {
+                    setOpen(false)
+                    setDate(date)
+                    // Format: YYYY-MM-DD HH:MM:SS
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                    setDateTime(formattedDate)
+                  }}
+                  onCancel={() => {
+                    setOpen(false)
+                  }}
                 />
-              </View>
 
-              <TouchableOpacity style={styles.offerButton} onPress={handleCreateRide} disabled={submitting}>
-                <Text style={styles.offerText}>{submitting ? 'Submitting...' : 'Offer Ride'}</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        )}
-      </View>
+                <View style={styles.row}>
+                  <TextInput
+                    placeholder="Total Seats"
+                    placeholderTextColor="#777"
+                    keyboardType="numeric"
+                    style={[styles.input, { flex: 1, marginRight: 5 }]}
+                    value={seats}
+                    onChangeText={setSeats}
+                  />
+                  <TextInput
+                    placeholder="Price/Seat"
+                    placeholderTextColor="#777"
+                    keyboardType="numeric"
+                    style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                </View>
+
+                {/* ── Verified Cars Only Label ── */}
+                <Text style={styles.label}>Select Car</Text>
+                {/* Info: only verified cars shown */}
+                {userCars.length > 0 && userCars.filter(c => c.license_verified === 'verified').length === 0 && (
+                  <View style={styles.noVerifiedBanner}>
+                    <Icon name="shield-alert-outline" size={26} color="#e67e22" />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={styles.noVerifiedTitle}>Car Not Verified Yet</Text>
+                      <Text style={styles.noVerifiedSub}>
+                        Your car and driving license have not been verified by the admin yet.
+                        You will be able to offer rides only after your car's license is approved.{"\n\n"}
+                        Please wait for admin verification or contact support for assistance.
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+
+                {/* Only show dropdown if at least one verified car exists */}
+                {userCars.filter(c => c.license_verified === 'verified').length > 0 && (
+                  <TouchableOpacity
+                    style={styles.dropdownButton}
+                    onPress={() => setShowCarDropdown(!showCarDropdown)}
+                  >
+                    <Text style={styles.dropdownButtonText}>
+                      {selectedCarId
+                        ? userCars.find(c => c.id === selectedCarId)?.car_make + ' ' + userCars.find(c => c.id === selectedCarId)?.car_model
+                        : 'Select Verified Car'}
+                    </Text>
+                    <Icon name={showCarDropdown ? 'chevron-up' : 'chevron-down'} size={24} color="#555" />
+                  </TouchableOpacity>
+                )}
+
+                {showCarDropdown && (
+                  <View style={styles.dropdownList}>
+                    {/* ONLY admin-verified cars shown — unverified cars completely hidden */}
+                    {userCars.filter(c => c.license_verified === 'verified').map((car) => (
+                      <TouchableOpacity
+                        key={car.id}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setSelectedCarId(car.id);
+                          setShowCarDropdown(false);
+                        }}
+                      >
+                        <Icon name="car" size={20} color="#248907" style={{ marginRight: 10 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.dropdownItemText}>
+                            {car.car_make} {car.car_model} ({car.licence_plate})
+                          </Text>
+                          <View style={styles.badgeVerified}>
+                            <Text style={styles.verBadgeText}>Verified</Text>
+                          </View>
+                        </View>
+                        {selectedCarId === car.id && (
+                          <Icon name="check" size={20} color="#248907" />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>Luggage Allowed</Text>
+                  <Switch
+                    value={luggage}
+                    onValueChange={setLuggage}
+                    trackColor={{ false: "#767577", true: "#81b0ff" }}
+                    thumbColor={luggage ? "#248907" : "#f4f3f4"}
+                  />
+                </View>
+
+                <TouchableOpacity style={styles.offerButton} onPress={handleCreateRide} disabled={submitting}>
+                  <Text style={styles.offerText}>{submitting ? 'Submitting...' : 'Offer Ride'}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

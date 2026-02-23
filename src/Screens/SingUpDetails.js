@@ -116,7 +116,7 @@ const CreateAccount = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} bounces={false} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }} bounces={false} showsVerticalScrollIndicator={false}>
 
           {/* GREEN HEADER */}
           <View style={styles.header}>

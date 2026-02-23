@@ -243,7 +243,7 @@ const RideBookingPage = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.headerContainer}>
             <Image source={require('../asset/Image/Ellipse.png')} style={styles.bgImage} />
             <Text style={styles.title}>Pick your ride at lowest{'\n'}prices</Text>
