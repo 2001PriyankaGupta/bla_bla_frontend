@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, ActivityIndicator } from 'react-native';
+
 import Login from '../Screens/Login';
 import SignUp from '../Screens/SignUp';
 import SignUpDetails from '../Screens/SingUpDetails';
@@ -34,9 +37,41 @@ import TicketChat from '../Screens/TicketChat';
 const Stack = createNativeStackNavigator();
 
 const RootNavigation = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [initialRoute, setInitialRoute] = useState('Login');
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user_data');
+        const token = await AsyncStorage.getItem('access_token');
+
+        if (userData && token) {
+          setInitialRoute('RideBookingPage');
+        } else {
+          setInitialRoute('Login');
+        }
+      } catch (error) {
+        console.error("Navigation check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#1fa000" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen
           name="Login"
           component={Login}

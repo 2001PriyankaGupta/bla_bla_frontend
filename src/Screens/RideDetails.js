@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { BASE_URL } from '../config/config';
+import { BASE_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
 import DatePicker from 'react-native-date-picker';
 
 const RideDetails = () => {
@@ -63,24 +63,18 @@ const RideDetails = () => {
         }
 
         try {
-            const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
-                headers: {
-                    'User-Agent': 'TravelApp/1.0',
-                    'Accept-Language': 'en'
-                },
+            const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
                 params: {
-                    q: query,
-                    format: 'json',
-                    limit: 5,
-                    addressdetails: 1,
-                    countrycodes: 'in'
+                    input: query,
+                    key: GOOGLE_MAPS_API_KEY,
+                    components: 'country:in'
                 }
             });
 
             if (type === 'pickup') {
-                setPickupSuggestions(response.data);
+                setPickupSuggestions(response.data.predictions || []);
             } else {
-                setDropSuggestions(response.data);
+                setDropSuggestions(response.data.predictions || []);
             }
         } catch (error) {
             console.warn("Autocomplete error:", error);
@@ -88,7 +82,7 @@ const RideDetails = () => {
     };
 
     const handleSelectSuggestion = (item, type) => {
-        const address = item.display_name;
+        const address = item.description;
         if (type === 'pickup') {
             setPickup(address);
             setPickupSuggestions([]);
@@ -416,7 +410,7 @@ const RideDetails = () => {
                                                 onPress={() => handleSelectSuggestion(item, 'pickup')}
                                             >
                                                 <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.display_name}</Text>
+                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -444,7 +438,7 @@ const RideDetails = () => {
                                                 onPress={() => handleSelectSuggestion(item, 'drop')}
                                             >
                                                 <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.display_name}</Text>
+                                                <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>

@@ -30,12 +30,21 @@ const DriverIntarnal = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
 
   const handleStatusUpdate = async (status) => {
+    const bId = tripData?.booking_information?.id || bookingId;
+    if (!bId) {
+      Alert.alert('Error', 'Booking ID is missing');
+      return;
+    }
+
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('access_token');
       const response = await axios.post(
-        `${BASE_URL}booking/${tripData?.booking_information?.id || bookingId}/status`,
-        { status: status },
+        `${BASE_URL}booking/${bId}/status`,
+        {
+          status: status,
+          rejection_reason: status === 'rejected' ? 'Rejected by driver' : null
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -43,11 +52,13 @@ const DriverIntarnal = () => {
         Alert.alert('Success', `Ride status updated to ${status}`);
         init();
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to update status');
+        Alert.alert('Error', response.data.message || response.data.error || 'Failed to update status');
       }
     } catch (error) {
       console.error('Update Status Error:', error);
-      Alert.alert('Error', 'Something went wrong while updating status');
+      const serverMsg = error.response?.data?.message || error.response?.data?.error || error.response?.data?.errors;
+      const finalMsg = typeof serverMsg === 'object' ? JSON.stringify(serverMsg) : serverMsg;
+      Alert.alert('Error', finalMsg || 'Something went wrong while updating status');
     } finally {
       setLoading(false);
     }

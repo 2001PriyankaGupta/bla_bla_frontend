@@ -10,6 +10,7 @@ import { BASE_URL } from '../config/config';
 const Publish = () => {
   const navigation = useNavigation();
   const [activeRides, setActiveRides] = useState([]);
+  const [earnings, setEarnings] = useState({ today: 0, week: 0 });
   const [loading, setLoading] = useState(true);
 
   const fetchMyRides = async () => {
@@ -25,10 +26,12 @@ const Publish = () => {
       if (response.data.status === true || response.status === 200) {
         const rides = response.data.data || [];
         setActiveRides(rides);
+        if (response.data.earnings) {
+          setEarnings(response.data.earnings);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard rides:', error);
-      // Optional: Alert.alert("Error", "Could not load rides");
     } finally {
       setLoading(false);
     }
@@ -92,8 +95,6 @@ const Publish = () => {
                     {new Date(ride.date_time).toLocaleString()}
                   </Text>
                 </View>
-
-
               </TouchableOpacity>
             ))
           ) : (
@@ -106,12 +107,12 @@ const Publish = () => {
 
         <View style={styles.card}>
           <Text style={styles.cardSubtitle}>Today</Text>
-          <Text style={styles.cardAmount}> ₹ 65</Text>
+          <Text style={styles.cardAmount}> ₹ {earnings.today || 0}</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardSubtitle}>This Week</Text>
-          <Text style={styles.cardAmount}> ₹ 320</Text>
+          <Text style={styles.cardAmount}> ₹ {earnings.week || 0}</Text>
         </View>
 
       </ScrollView>

@@ -19,7 +19,7 @@ import {
     Alert
 } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
-import Geolocation from 'react-native-geolocation-service';
+import GetLocation from 'react-native-get-location';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -206,34 +206,31 @@ const ChatScreen = () => {
 
     const handleLocation = async () => {
         if (Platform.OS === 'android') {
-            const granted = await PermissionsAndroid.request(
+            const granted = await PermissionsAndroid.requestMultiple([
                 PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                {
-                    title: "Location Permission",
-                    message: "App needs access to your location to share it.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK"
-                }
-            );
-            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+            ]);
+            if (granted['android.permission.ACCESS_FINE_LOCATION'] !== PermissionsAndroid.RESULTS.GRANTED &&
+                granted['android.permission.ACCESS_COARSE_LOCATION'] !== PermissionsAndroid.RESULTS.GRANTED) {
                 console.log("Location permission denied");
                 return;
             }
         }
 
-        Geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
+        GetLocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 60000,
+        })
+            .then(location => {
+                const { latitude, longitude } = location;
                 const locationUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
                 sendMessage('location', locationUrl);
-            },
-            (error) => {
-                console.log(error.code, error.message);
+            })
+            .catch(error => {
+                const { code, message } = error;
+                console.log("GetLocation Error:", code, message);
                 Alert.alert("Error", "Could not get location.");
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-        );
+            });
     };
 
     const renderItem = ({ item }) => {
