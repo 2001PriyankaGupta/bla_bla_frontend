@@ -7,7 +7,8 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
-    Alert
+    Alert,
+    StatusBar
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -110,6 +111,7 @@ const ForgotPassword = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" translucent={false} />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={24} color="#fff" />
@@ -210,8 +212,6 @@ const ForgotPassword = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#248907', // Green background like Login? Or just white. let's do white with green top.
-        // Actually, Login has white bg. Let's keep it white but make it nicer.
         backgroundColor: '#fff',
     },
     header: {
@@ -224,7 +224,8 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
-        marginBottom: 20
+        marginBottom: 20,
+        marginTop: 35,
     },
     headerTitle: {
         fontSize: 20,

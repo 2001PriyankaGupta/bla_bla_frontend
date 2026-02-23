@@ -3,13 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   StatusBar,
   ScrollView,
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Payments = () => {
   const [activeTab, setActiveTab] = useState('Paid');
@@ -27,9 +28,9 @@ const Payments = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor="#248907" translucent={false} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: verticalScale(30) }}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -159,28 +160,28 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#248907',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 25,
-    paddingTop: 15,
+    borderBottomLeftRadius: moderateScale(20),
+    borderBottomRightRadius: moderateScale(20),
+    paddingHorizontal: scale(20),
+    paddingBottom: verticalScale(25),
+    paddingTop: verticalScale(15),
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
-    marginTop: 10,
+    marginBottom: verticalScale(15),
+    marginTop: verticalScale(10),
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
   walletCard: {
     backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
+    borderRadius: moderateScale(15),
+    padding: moderateScale(15),
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
@@ -190,17 +191,17 @@ const styles = StyleSheet.create({
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
   },
   balanceText: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: '700',
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
   balanceSubText: {
     color: '#777',
-    fontSize: 13,
-    marginLeft: 10,
+    fontSize: responsiveFontSize(13),
+    marginLeft: scale(10),
   },
   buttonRow: {
     flexDirection: 'row',
@@ -209,38 +210,39 @@ const styles = StyleSheet.create({
   addButton: {
     flex: 1,
     backgroundColor: '#248907',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(8),
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: scale(10),
   },
   withdrawButton: {
     flex: 1,
     backgroundColor: '#f2f2f2',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(8),
     alignItems: 'center',
   },
   buttonText: {
     fontWeight: '700',
     color: '#fff',
+    fontSize: responsiveFontSize(14),
   },
   section: {
-    padding: 20,
+    padding: moderateScale(20),
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '700',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
     color: '#000',
   },
   methodBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    borderRadius: moderateScale(10),
+    padding: moderateScale(12),
+    marginBottom: verticalScale(10),
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -248,28 +250,28 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   methodIcon: {
-    width: 35,
-    height: 35,
-    marginRight: 12,
+    width: scale(35),
+    height: scale(35),
+    marginRight: scale(12),
   },
   methodName: {
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     color: '#000',
   },
   methodType: {
     color: '#777',
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
   },
   tabRow: {
     flexDirection: 'row',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: verticalScale(8),
     alignItems: 'center',
   },
   activeTabButton: {
@@ -279,6 +281,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: '#888',
     fontWeight: '600',
+    fontSize: responsiveFontSize(14),
   },
   activeTabText: {
     color: '#000',
@@ -287,9 +290,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    borderRadius: moderateScale(10),
+    padding: moderateScale(12),
+    marginBottom: verticalScale(10),
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -299,9 +302,11 @@ const styles = StyleSheet.create({
   transactionTitle: {
     fontWeight: '600',
     color: '#000',
+    fontSize: responsiveFontSize(14),
   },
   transactionDesc: {
     color: '#777',
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
   },
 });
+

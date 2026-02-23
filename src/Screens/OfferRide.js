@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
 import DatePicker from 'react-native-date-picker';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 
 const OfferRide = () => {
   const navigation = useNavigation();
@@ -328,8 +329,8 @@ const OfferRide = () => {
 
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+      <StatusBar barStyle="dark-content" translucent={false} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -586,48 +587,59 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#248907',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: scale(15),
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 35,
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
     color: '#fff',
   },
   tabContainer: {
-    flexDirection: 'row', marginBottom: 5, borderBottomWidth: 1, borderBottomColor: '#eee', backgroundColor: '#fff',
+    flexDirection: 'row',
+    marginBottom: verticalScale(5),
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
   },
   tabButton: {
-    flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent',
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   activeTabButton: {
     borderBottomColor: '#248907',
   },
   tabText: {
-    fontSize: 16, fontWeight: '600', color: '#777',
+    fontSize: responsiveFontSize(16),
+    fontWeight: '600',
+    color: '#777',
   },
   activeTabText: {
     color: '#248907',
   },
   formContainer: {
-    padding: 15,
+    padding: moderateScale(15),
   },
   createTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
     color: '#000',
   },
   input: {
     backgroundColor: '#fff',
-    marginVertical: 8,
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 16,
+    marginVertical: verticalScale(8),
+    padding: moderateScale(12),
+    borderRadius: moderateScale(8),
+    fontSize: responsiveFontSize(16),
     borderWidth: 1,
     borderColor: '#ddd',
     color: '#000',
@@ -638,30 +650,30 @@ const styles = StyleSheet.create({
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 15,
+    paddingVertical: verticalScale(15),
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginVertical: 8,
+    borderRadius: moderateScale(8),
+    paddingHorizontal: scale(10),
+    marginVertical: verticalScale(8),
     borderWidth: 1,
     borderColor: '#ddd',
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '500',
     color: '#000',
   },
   offerButton: {
     backgroundColor: '#248907',
-    marginTop: 20,
-    padding: 15,
-    borderRadius: 10,
+    marginTop: verticalScale(20),
+    padding: moderateScale(15),
+    borderRadius: moderateScale(10),
     alignItems: 'center',
   },
   offerText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
   },
   dateButton: {
@@ -671,26 +683,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 8,
+    padding: moderateScale(12),
+    borderRadius: moderateScale(8),
+    marginVertical: verticalScale(8),
   },
   dateButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#000',
   },
   // Card Styles
   rideCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 15,
-    padding: 15,
+    borderRadius: moderateScale(12),
+    marginBottom: verticalScale(15),
+    padding: moderateScale(15),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
-    marginHorizontal: 5,
+    marginHorizontal: scale(5),
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
@@ -698,21 +710,21 @@ const styles = StyleSheet.create({
   // ── Price badge (absolute top-right) ──
   priceBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: verticalScale(12),
+    right: scale(12),
     backgroundColor: '#e8f5e9',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: moderateScale(20),
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
     alignItems: 'center',
   },
   priceBadgeText: {
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     fontWeight: '800',
     color: '#248907',
   },
   perSeatText: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     color: '#555',
     fontWeight: '500',
   },
@@ -721,8 +733,8 @@ const styles = StyleSheet.create({
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    marginRight: 80,      // leave space for price badge
+    marginBottom: verticalScale(4),
+    marginRight: scale(80),      // leave space for price badge
   },
   routePoint: {
     flexDirection: 'row',
@@ -731,30 +743,30 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   routeLabel: {
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginLeft: 4,
+    marginLeft: scale(4),
     flexShrink: 1,
   },
 
   // ── Full address (small) ──
   fullAddr: {
-    fontSize: 11,
+    fontSize: responsiveFontSize(11),
     color: '#aaa',
-    marginLeft: 4,
-    marginBottom: 1,
+    marginLeft: scale(4),
+    marginBottom: verticalScale(1),
   },
   arrowDivider: {
-    marginLeft: 4,
-    marginVertical: 1,
+    marginLeft: scale(4),
+    marginVertical: verticalScale(1),
   },
 
   // ── Divider ──
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
-    marginVertical: 10,
+    marginVertical: verticalScale(10),
   },
 
   // ── Meta row (date + car) ──
@@ -762,66 +774,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 12,
+    gap: scale(12),
+    marginBottom: verticalScale(12),
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   metaText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#555',
-    marginLeft: 5,
+    marginLeft: scale(5),
     fontWeight: '500',
   },
 
   // ── Seat Box ──
   seatBox: {
     backgroundColor: '#fafafa',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: moderateScale(10),
+    padding: moderateScale(10),
+    marginBottom: verticalScale(10),
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
   seatStatRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
   },
   seatPill: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginHorizontal: 3,
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(8),
+    marginHorizontal: scale(3),
   },
   seatPillNum: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: verticalScale(2),
   },
   seatPillLabel: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     color: '#888',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   seatBarBg: {
-    height: 6,
+    height: verticalScale(6),
     backgroundColor: '#e0e0e0',
-    borderRadius: 4,
+    borderRadius: moderateScale(4),
     overflow: 'hidden',
-    marginBottom: 5,
+    marginBottom: verticalScale(5),
   },
   seatBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: moderateScale(4),
   },
   seatBarCaption: {
-    fontSize: 11,
+    fontSize: responsiveFontSize(11),
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -830,29 +842,29 @@ const styles = StyleSheet.create({
   luggageRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: verticalScale(4),
   },
   luggageText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#248907',
-    marginLeft: 5,
+    marginLeft: scale(5),
     fontWeight: '500',
   },
 
   // ── OLD styles kept for form area compatibility ──
   priceText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
     color: '#248907',
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
 
   // Selection Styles
   label: {
     fontWeight: '700',
     color: '#333',
-    marginBottom: 5,
-    fontSize: 14,
+    marginBottom: verticalScale(5),
+    fontSize: responsiveFontSize(14),
   },
   dropdownButton: {
     flexDirection: 'row',
@@ -861,21 +873,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: moderateScale(12),
+    borderRadius: moderateScale(8),
+    marginBottom: verticalScale(10),
   },
   dropdownButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#333',
   },
   dropdownList: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#eee',
-    borderRadius: 8,
-    marginTop: -5,
-    marginBottom: 15,
+    borderRadius: moderateScale(8),
+    marginTop: verticalScale(-5),
+    marginBottom: verticalScale(15),
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -885,30 +897,30 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: moderateScale(12),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   dropdownItemText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: '#333',
     fontWeight: '500',
   },
   rideDetailsRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: verticalScale(12),
     flexWrap: 'wrap', // Responsive wrapping
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
-    marginBottom: 5,
+    marginRight: scale(20),
+    marginBottom: verticalScale(5),
   },
   detailText: {
-    marginLeft: 6,
+    marginLeft: scale(6),
     color: '#555',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: '500',
   },
   carRow: {
@@ -916,30 +928,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(8),
+    borderRadius: moderateScale(8),
   },
   carText: {
     color: '#444',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: verticalScale(50),
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#999',
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: verticalScale(10),
+    marginBottom: verticalScale(20),
   },
   addFirstBtn: {
     backgroundColor: '#248907',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(20),
   },
   addFirstBtnText: {
     color: '#fff',
@@ -950,7 +962,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: '#fff8e1',
-    borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderLeftWidth: 4,

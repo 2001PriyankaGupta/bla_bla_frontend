@@ -3,18 +3,22 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
     Alert,
-    StatusBar
+    StatusBar,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { BASE_URL } from '../config/config';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AddReviewScreen = () => {
     const navigation = useNavigation();
@@ -69,63 +73,73 @@ const AddReviewScreen = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
+        <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+            <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name="close" size={24} color="#fff" />
+                    <Icon name="close" size={scale(24)} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Rate Your Ride</Text>
-                <View style={{ width: 24 }} />
+                <View style={{ width: scale(24) }} />
             </View>
 
-            <View style={styles.content}>
-                <Text style={styles.title}>How was your experience?</Text>
-                <Text style={styles.subtitle}>Your feedback helps us improve.</Text>
-
-                {/* Star Rating */}
-                <View style={styles.starContainer}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                            <Icon
-                                name={star <= rating ? "star" : "star-outline"}
-                                size={40}
-                                color="#FFD700"
-                                style={{ marginHorizontal: 5 }}
-                            />
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Comment Input */}
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Write a comment (optional)..."
-                        placeholderTextColor="#999"
-                        multiline
-                        maxLength={500}
-                        value={comment}
-                        onChangeText={setComment}
-                    />
-                </View>
-
-                {/* Submit Button */}
-                <TouchableOpacity
-                    style={[styles.submitBtn, { opacity: submitting ? 0.7 : 1 }]}
-                    onPress={handleSubmit}
-                    disabled={submitting}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="always"
                 >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitBtnText}>Submit Review</Text>
-                    )}
-                </TouchableOpacity>
+                    <View style={styles.content}>
+                        <Text style={styles.title}>How was your experience?</Text>
+                        <Text style={styles.subtitle}>Your feedback helps us improve.</Text>
 
-            </View>
+                        {/* Star Rating */}
+                        <View style={styles.starContainer}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                                    <Icon
+                                        name={star <= rating ? "star" : "star-outline"}
+                                        size={scale(40)}
+                                        color="#FFD700"
+                                        style={{ marginHorizontal: scale(5) }}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Comment Input */}
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Write a comment (optional)..."
+                                placeholderTextColor="#999"
+                                multiline
+                                maxLength={500}
+                                value={comment}
+                                onChangeText={setComment}
+                            />
+                        </View>
+
+                        {/* Submit Button */}
+                        <TouchableOpacity
+                            style={[styles.submitBtn, { opacity: submitting ? 0.7 : 1 }]}
+                            onPress={handleSubmit}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.submitBtnText}>Submit Review</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -136,11 +150,10 @@ const styles = StyleSheet.create({
     safe: {
         flex: 1,
         backgroundColor: '#fff',
-        marginTop: 25
     },
     header: {
         backgroundColor: '#1fa000',
-        padding: 15,
+        padding: scale(15),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between'
@@ -148,38 +161,42 @@ const styles = StyleSheet.create({
     headerTitle: {
         color: '#fff',
         fontWeight: '700',
-        fontSize: 18
+        fontSize: responsiveFontSize(18)
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingBottom: verticalScale(40)
     },
     content: {
-        padding: 20,
+        padding: scale(20),
         alignItems: 'center',
-        marginTop: 20
+        marginTop: verticalScale(20)
     },
     title: {
-        fontSize: 22,
+        fontSize: responsiveFontSize(22),
         fontWeight: '700',
         color: '#333',
-        marginBottom: 5
+        marginBottom: verticalScale(5)
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#666',
-        marginBottom: 30
+        marginBottom: verticalScale(30)
     },
     starContainer: {
         flexDirection: 'row',
-        marginBottom: 40
+        marginBottom: verticalScale(40)
     },
     inputContainer: {
         width: '100%',
         backgroundColor: '#f5f5f5',
-        borderRadius: 10,
-        height: 120,
-        padding: 15,
-        marginBottom: 30
+        borderRadius: moderateScale(10),
+        height: verticalScale(120),
+        padding: scale(15),
+        marginBottom: verticalScale(30)
     },
     input: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         color: '#333',
         height: '100%',
         textAlignVertical: 'top'
@@ -187,13 +204,13 @@ const styles = StyleSheet.create({
     submitBtn: {
         backgroundColor: '#1fa000',
         width: '100%',
-        paddingVertical: 15,
-        borderRadius: 10,
+        paddingVertical: verticalScale(15),
+        borderRadius: moderateScale(10),
         alignItems: 'center'
     },
     submitBtnText: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: '700'
     }
 });

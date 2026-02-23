@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  SafeAreaView,
   StyleSheet,
   Image,
   TextInput,
@@ -14,6 +13,8 @@ import {
   Alert,
   PermissionsAndroid
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { BASE_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
@@ -241,7 +242,7 @@ const RideBookingPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
+      <StatusBar barStyle="dark-content" backgroundColor="#1fa000" translucent={false} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.headerContainer}>
@@ -260,13 +261,13 @@ const RideBookingPage = () => {
                   onChangeText={(text) => { setFrom(text); fetchSuggestions(text, 'from'); }}
                 />
                 <TouchableOpacity style={styles.locationBtn} onPress={getCurrentLocation} disabled={loadingLocation}>
-                  <Icon name={loadingLocation ? "sync" : "crosshairs-gps"} size={22} color="#1fa000" />
+                  <Icon name={loadingLocation ? "sync" : "crosshairs-gps"} size={scale(22)} color="#1fa000" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.swapBtn} onPress={() => {
                   const t = from; setFrom(to); setTo(t);
                   const tm = fromMarker; setFromMarker(toMarker); setToMarker(tm);
                 }}>
-                  <Icon name="swap-vertical" size={22} color="#fff" />
+                  <Icon name="swap-vertical" size={scale(22)} color="#fff" />
                 </TouchableOpacity>
               </View>
               {fromSuggestions.length > 0 && (
@@ -349,19 +350,19 @@ const RideBookingPage = () => {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-          <Icon name="home" size={32} color="#fff" />
+          <Icon name="home" size={scale(32)} color="#fff" />
           <Text style={styles.bottomText}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Publish")}>
-          <Icon name="plus" size={32} color="#fff" />
+          <Icon name="plus" size={scale(32)} color="#fff" />
           <Text style={styles.bottomText}>Publish</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("YourRides")}>
-          <Icon name="car" size={32} color="#fff" />
+          <Icon name="car" size={scale(32)} color="#fff" />
           <Text style={styles.bottomText}>Rides</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
-          <Icon name="account" size={32} color="#fff" />
+          <Icon name="account" size={scale(32)} color="#fff" />
           <Text style={styles.bottomText}>Profile</Text>
         </TouchableOpacity>
       </View>
@@ -373,25 +374,26 @@ export default RideBookingPage;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  headerContainer: { width: '100%', height: 220, justifyContent: 'center', alignItems: 'center' },
-  bgImage: { width: '100%', height: 240, position: 'absolute', resizeMode: 'cover' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 20 },
-  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: -40, borderRadius: 15, padding: 20, elevation: 10 },
-  label: { fontSize: 13, color: '#555', marginBottom: 5 },
+  headerContainer: { width: '100%', height: verticalScale(220), justifyContent: 'center', alignItems: 'center' },
+  bgImage: { width: '100%', height: verticalScale(240), position: 'absolute', resizeMode: 'cover' },
+  title: { color: '#fff', fontSize: responsiveFontSize(22), fontWeight: '700', textAlign: 'center', marginTop: verticalScale(20) },
+  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: verticalScale(-40), borderRadius: moderateScale(15), padding: moderateScale(20), elevation: 10 },
+  label: { fontSize: responsiveFontSize(13), color: '#555', marginBottom: verticalScale(5) },
   row: { flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: 10, height: 45, paddingHorizontal: 10, marginBottom: 10 },
-  swapBtn: { backgroundColor: '#1fa000', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+  input: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: moderateScale(10), height: verticalScale(45), paddingHorizontal: scale(10), marginBottom: verticalScale(10) },
+  swapBtn: { backgroundColor: '#1fa000', width: scale(40), height: scale(40), borderRadius: scale(20), justifyContent: 'center', alignItems: 'center', marginLeft: scale(10) },
   smallRow: { flexDirection: 'row', justifyContent: 'space-between' },
   smallBox: { width: '48%' },
-  smallInput: { borderWidth: 1, borderColor: '#ccc', borderRadius: 10, height: 45, paddingHorizontal: 10 },
-  searchBtn: { backgroundColor: '#1fa000', paddingVertical: 14, borderRadius: 10, marginTop: 15 },
-  searchText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  smallInput: { borderWidth: 1, borderColor: '#ccc', borderRadius: moderateScale(10), height: verticalScale(45), paddingHorizontal: scale(10) },
+  searchBtn: { backgroundColor: '#1fa000', paddingVertical: verticalScale(14), borderRadius: moderateScale(10), marginTop: verticalScale(15) },
+  searchText: { color: '#fff', fontSize: responsiveFontSize(16), fontWeight: '700', textAlign: 'center' },
   map: { width: '100%', height: '100%' },
-  mapContainer: { width: '90%', height: 180, borderRadius: 12, alignSelf: 'center', marginTop: 25, overflow: 'hidden', elevation: 5, backgroundColor: '#eee' },
-  bottomBar: { position: 'absolute', bottom: 20, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: '#1fa000', paddingVertical: 10, marginHorizontal: 40, borderRadius: 30, elevation: 10 },
-  bottomText: { color: '#fff', fontSize: 12, textAlign: 'center', marginTop: 4 },
-  suggestionsContainer: { position: 'absolute', top: 50, left: 0, right: 0, backgroundColor: '#fff', borderRadius: 8, elevation: 20, zIndex: 1000, maxHeight: 200, borderWidth: 1, borderColor: '#ddd' },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  suggestionText: { fontSize: 14, color: '#333', flex: 1 },
-  locationBtn: { paddingHorizontal: 10, justifyContent: 'center', alignItems: 'center', height: 45, marginBottom: 10 },
+  mapContainer: { width: '90%', height: verticalScale(180), borderRadius: moderateScale(12), alignSelf: 'center', marginTop: verticalScale(25), overflow: 'hidden', elevation: 5, backgroundColor: '#eee' },
+  bottomBar: { position: 'absolute', bottom: verticalScale(20), left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: '#1fa000', paddingVertical: verticalScale(10), marginHorizontal: scale(40), borderRadius: moderateScale(30), elevation: 10 },
+  bottomText: { color: '#fff', fontSize: responsiveFontSize(12), textAlign: 'center', marginTop: verticalScale(4) },
+  suggestionsContainer: { position: 'absolute', top: verticalScale(50), left: 0, right: 0, backgroundColor: '#fff', borderRadius: moderateScale(8), elevation: 20, zIndex: 1000, maxHeight: verticalScale(200), borderWidth: 1, borderColor: '#ddd' },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: moderateScale(12), borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  suggestionText: { fontSize: responsiveFontSize(14), color: '#333', flex: 1 },
+  locationBtn: { paddingHorizontal: scale(10), justifyContent: 'center', alignItems: 'center', height: verticalScale(45), marginBottom: verticalScale(10) },
 });
+

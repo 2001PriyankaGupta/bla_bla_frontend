@@ -202,17 +202,17 @@ const ShowCarDetails = () => {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
             {/* Header */}
             <View style={styles.headerView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name="arrow-left" size={24} color="#000" />
+                    <Icon name="arrow-left" size={24} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerText}>{isEditing ? 'Edit Car' : 'Car Details'}</Text>
                 {!isEditing && (
                     <TouchableOpacity onPress={() => setIsEditing(true)}>
-                        <Icon name="pencil" size={24} color="#248907" />
+                        <Icon name="pencil" size={24} color="#fff" />
                     </TouchableOpacity>
                 )}
             </View>
@@ -412,10 +412,20 @@ const styles = StyleSheet.create({
         flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
     },
     headerView: {
-        flexDirection: 'row', alignItems: 'center', paddingVertical: 15, marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 15,
+        marginBottom: 10,
+        backgroundColor: '#248907',
+        paddingHorizontal: 20,
     },
     headerText: {
-        fontSize: 20, fontWeight: '600', color: '#000', flex: 1, textAlign: 'center', marginRight: 24, // compensate for back arrow
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#fff',
+        flex: 1,
+        textAlign: 'center',
+        marginRight: 24, // compensate for back arrow
     },
     imageContainer: {
         alignItems: 'center', marginVertical: 20,

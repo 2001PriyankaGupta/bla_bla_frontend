@@ -22,6 +22,7 @@ import ImagePicker from 'react-native-image-crop-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, IMG_URL } from '../config/config';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 
 const AddYourCar = () => {
   const navigation = useNavigation();
@@ -199,7 +200,7 @@ const AddYourCar = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" translucent={true} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -208,7 +209,7 @@ const AddYourCar = () => {
         {/* Header */}
         <View style={styles.headerView}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={24} color="#000" />
+            <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerText}>My Garage</Text>
         </View>
@@ -343,28 +344,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
+    marginBottom: 10,
+    backgroundColor: '#248907',
+    marginTop: 35,
     paddingHorizontal: 20,
   },
   headerText: {
-    fontSize: 20, fontWeight: '600', color: '#000', flex: 1, textAlign: 'center', marginRight: 24,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 24, // compensate for back arrow
   },
 
   // Tabs
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   tabButton: {
-    flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent',
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   activeTabButton: {
     borderBottomColor: '#248907',
   },
   tabText: {
-    fontSize: 16, color: '#777', fontWeight: '600',
+    fontSize: responsiveFontSize(16),
+    color: '#777',
+    fontWeight: '600',
   },
   activeTabText: {
     color: '#248907',
@@ -372,87 +387,172 @@ const styles = StyleSheet.create({
 
   // List Item Styles
   carCard: {
-    flexDirection: 'row', backgroundColor: '#fff', borderRadius: 10, padding: 10, marginBottom: 15,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 3,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(10),
+    padding: moderateScale(10),
+    marginBottom: verticalScale(15),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   carListImage: {
-    width: 80, height: 80, borderRadius: 8, marginRight: 15, backgroundColor: '#f0f0f0',
+    width: scale(80),
+    height: scale(80),
+    borderRadius: moderateScale(8),
+    marginRight: scale(15),
+    backgroundColor: '#f0f0f0',
   },
   carInfo: {
-    flex: 1, justifyContent: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   carTitle: {
-    fontSize: 18, fontWeight: '700', color: '#000', marginBottom: 4,
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: verticalScale(4),
   },
   carDetail: {
-    fontSize: 14, color: '#555', marginBottom: 4,
+    fontSize: responsiveFontSize(14),
+    color: '#555',
+    marginBottom: verticalScale(4),
   },
   plateText: {
-    fontSize: 14, fontWeight: '600', color: '#333',
+    fontSize: responsiveFontSize(14),
+    fontWeight: '600',
+    color: '#333',
   },
   statusBadge: {
-    position: 'absolute', top: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(4),
   },
   statusText: {
-    color: '#fff', fontSize: 10, fontWeight: '700',
+    color: '#fff',
+    fontSize: responsiveFontSize(10),
+    fontWeight: '700',
   },
   emptyContainer: {
-    alignItems: 'center', justifyContent: 'center', marginTop: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: verticalScale(50),
   },
   emptyText: {
-    marginTop: 10, fontSize: 16, color: '#777', marginBottom: 20,
+    marginTop: verticalScale(10),
+    fontSize: responsiveFontSize(16),
+    color: '#777',
+    marginBottom: verticalScale(20),
   },
   addFirstBtn: {
-    backgroundColor: '#248907', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8,
+    backgroundColor: '#248907',
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(8),
   },
   addFirstBtnText: {
-    color: '#fff', fontWeight: '600',
+    color: '#fff',
+    fontWeight: '600',
   },
 
   // Form Styles
   formTitle: {
-    fontSize: 18, fontWeight: '600', marginBottom: 15, color: '#333', textAlign: 'center'
+    fontSize: responsiveFontSize(18),
+    fontWeight: '600',
+    marginBottom: verticalScale(15),
+    color: '#333',
+    textAlign: 'center',
   },
   input: {
-    width: '100%', height: 55, borderWidth: 1.2, borderColor: '#6EC16E', borderRadius: 10, fontSize: 16, paddingHorizontal: 12, color: '#000', marginBottom: 18,
+    width: '100%',
+    height: verticalScale(55),
+    borderWidth: 1.2,
+    borderColor: '#6EC16E',
+    borderRadius: moderateScale(10),
+    fontSize: responsiveFontSize(16),
+    paddingHorizontal: scale(12),
+    color: '#000',
+    marginBottom: verticalScale(18),
   },
   sectionTitle: {
-    fontSize: 18, fontWeight: '700', color: '#000', marginTop: 15, marginBottom: 10,
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+    color: '#000',
+    marginTop: verticalScale(15),
+    marginBottom: verticalScale(10),
   },
   msgText: {
-    fontSize: 16, color: '#555', textAlign: 'center', marginBottom: 20,
+    fontSize: responsiveFontSize(16),
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: verticalScale(20),
   },
   uploadBox: {
-    borderWidth: 2, borderStyle: 'dashed', borderColor: '#4CAF50', borderRadius: 12, paddingVertical: 20, alignItems: 'center', marginBottom: 20, minHeight: 150, justifyContent: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#4CAF50',
+    borderRadius: moderateScale(12),
+    paddingVertical: verticalScale(20),
+    alignItems: 'center',
+    marginBottom: verticalScale(20),
+    minHeight: verticalScale(150),
+    justifyContent: 'center',
   },
   uploadTitle: {
-    fontSize: 18, fontWeight: '700', color: '#000',
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+    color: '#000',
   },
   uploadSubtitle: {
-    marginTop: 5, fontSize: 14, color: '#555', textAlign: 'center',
+    marginTop: verticalScale(5),
+    fontSize: responsiveFontSize(14),
+    color: '#555',
+    textAlign: 'center',
   },
   uploadButton: {
-    marginTop: 15, backgroundColor: '#248907', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 8,
+    marginTop: verticalScale(15),
+    backgroundColor: '#248907',
+    paddingVertical: verticalScale(8),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(8),
   },
   uploadButtonText: {
-    fontSize: 14, fontWeight: '600', color: '#fff',
+    fontSize: responsiveFontSize(14),
+    fontWeight: '600',
+    color: '#fff',
   },
   previewImage: {
-    width: 200, height: 120, borderRadius: 10, resizeMode: 'cover',
+    width: scale(200),
+    height: verticalScale(120),
+    borderRadius: moderateScale(10),
+    resizeMode: 'cover',
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   bottomSection: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: verticalScale(20),
+    paddingHorizontal: scale(20),
     backgroundColor: '#fff',
   },
   continueButton: {
-    width: '100%', height: 55, backgroundColor: '#248907', borderRadius: 10, justifyContent: 'center', alignItems: 'center',
+    width: '100%',
+    height: verticalScale(55),
+    backgroundColor: '#248907',
+    borderRadius: moderateScale(10),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   continueText: {
-    fontSize: 18, fontWeight: '600', color: '#fff',
+    fontSize: responsiveFontSize(18),
+    fontWeight: '600',
+    color: '#fff',
   },
 });
+

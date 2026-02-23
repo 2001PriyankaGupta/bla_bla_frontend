@@ -8,14 +8,16 @@ import {
   Platform,
   Image,
   ScrollView,
+  StatusBar,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { BASE_URL } from '../config/config';
-import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
@@ -125,11 +127,12 @@ const LoginDetails = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1, width: '100%' }}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 30 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: scale(30) }} showsVerticalScrollIndicator={false}>
           <View style={{ alignItems: 'center', width: '100%' }}>
             {/* Email Input */}
             <View style={styles.inputBox}>
@@ -213,57 +216,57 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 30,
+    paddingHorizontal: scale(30),
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   inputBox: {
     width: '100%',
-    height: 55,
+    height: verticalScale(55),
     borderWidth: 1,
     borderColor: '#6EC16E',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    marginBottom: 18,
+    paddingHorizontal: scale(12),
+    marginBottom: verticalScale(18),
     backgroundColor: '#fff',
   },
 
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#000',
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
 
   nextButton: {
     width: '100%',
-    height: 55,
+    height: verticalScale(55),
     backgroundColor: '#248907',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: verticalScale(10),
   },
 
   nextText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
     color: '#fff',
   },
 
   cancelText: {
-    marginTop: 20,
-    fontSize: 17,
+    marginTop: verticalScale(20),
+    fontSize: responsiveFontSize(17),
     color: '#000',
     textAlign: 'center',
   },
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: verticalScale(20),
     width: '100%',
   },
   line: {
@@ -272,26 +275,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#dcdcdc',
   },
   orText: {
-    marginHorizontal: 10,
+    marginHorizontal: scale(10),
     color: '#777',
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
   },
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginBottom: 20,
+    gap: scale(20),
+    marginBottom: verticalScale(20),
   },
   socialBtn: {
-    padding: 12,
+    padding: moderateScale(12),
     borderWidth: 1,
     borderColor: '#dcdcdc',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     backgroundColor: '#fff',
   },
   socialIcon: {
-    width: 30,
-    height: 30,
+    width: scale(30),
+    height: scale(30),
     resizeMode: 'contain',
   },
 });

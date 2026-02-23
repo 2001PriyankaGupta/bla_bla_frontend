@@ -45,7 +45,7 @@ const Publish = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+      <StatusBar barStyle="dark-content" />
 
       {/* Green Header Area */}
       <View style={styles.headerWrapper}>

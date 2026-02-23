@@ -87,7 +87,7 @@ const Inbox = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+      <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
       {/* Header */}
       <View style={styles.header}>

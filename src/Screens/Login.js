@@ -5,8 +5,9 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { BASE_URL } from '../config/config';
@@ -16,7 +17,7 @@ const Login = () => {
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'left', 'right']}>
       <StatusBar barStyle="light-content" translucent />
 
       <View style={styles.container}>
@@ -74,4 +75,76 @@ const Login = () => {
 
 export default Login;
 
-const styles = StyleSheet.create({ container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', }, Imagelogo: { width: '100%', height: 450, }, title: { fontSize: 48, color: '#fff', position: 'absolute', left: 30, top: 100, fontWeight: '600', }, subtitle: { fontSize: 20, color: '#fff', position: 'absolute', left: 30, top: 180, lineHeight: 26, }, car: { width: 300, height: 160, marginTop: -150, }, title3: { fontSize: 22, textAlign: 'center', marginTop: 20, color: '#000', }, btnWrapper: { width: '100%', alignItems: 'center', marginTop: 30, gap: 12, }, SignUp: { width: '80%', height: 50, backgroundColor: '#248907', borderRadius: 10, justifyContent: 'center', alignItems: 'center', }, text: { color: '#fff', fontSize: 18, fontWeight: '600', }, Login: { width: '80%', height: 50, backgroundColor: '#fff', borderWidth: 2, borderColor: '#248907', borderRadius: 10, justifyContent: 'center', alignItems: 'center', }, text2: { color: '#248907', fontSize: 18, fontWeight: '700', }, });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  Imagelogo: {
+    width: '100%',
+    height: verticalScale(450),
+  },
+  title: {
+    fontSize: responsiveFontSize(48),
+    color: '#fff',
+    position: 'absolute',
+    left: scale(30),
+    top: verticalScale(100),
+    fontWeight: '600',
+  },
+  subtitle: {
+    fontSize: responsiveFontSize(20),
+    color: '#fff',
+    position: 'absolute',
+    left: scale(30),
+    top: verticalScale(180),
+    lineHeight: verticalScale(26),
+  },
+  car: {
+    width: scale(300),
+    height: verticalScale(160),
+    marginTop: verticalScale(-150),
+  },
+  title3: {
+    fontSize: responsiveFontSize(22),
+    textAlign: 'center',
+    marginTop: verticalScale(20),
+    color: '#000',
+  },
+  btnWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: verticalScale(30),
+    gap: verticalScale(12),
+  },
+  SignUp: {
+    width: '80%',
+    height: verticalScale(50),
+    backgroundColor: '#248907',
+    borderRadius: moderateScale(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    color: '#fff',
+    fontSize: responsiveFontSize(18),
+    fontWeight: '600',
+  },
+  Login: {
+    width: '80%',
+    height: verticalScale(50),
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#248907',
+    borderRadius: moderateScale(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text2: {
+    color: '#248907',
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+  },
+});
+

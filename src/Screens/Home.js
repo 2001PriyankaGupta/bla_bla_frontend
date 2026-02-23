@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { BASE_URL } from '../config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 
 const Home = ({ route }) => {
   const navigation = useNavigation();
@@ -89,7 +90,7 @@ const Home = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle='light-content' backgroundColor="#248907" />
+      <StatusBar barStyle='dark-content' backgroundColor="#248907" translucent={false} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -219,7 +220,6 @@ const Home = ({ route }) => {
 export default Home;
 
 const styles = StyleSheet.create({
-  /* FIXED SAFE AREA */
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
@@ -228,10 +228,11 @@ const styles = StyleSheet.create({
   /* HEADER */
   header: {
     backgroundColor: '#248907',
-    paddingHorizontal: 15,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    paddingHorizontal: scale(15),
+    paddingTop: verticalScale(10),
+    paddingBottom: verticalScale(20),
+    borderBottomLeftRadius: moderateScale(25),
+    borderBottomRightRadius: moderateScale(25),
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -243,16 +244,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: 15,
+    marginTop: verticalScale(15),
   },
 
   locationBox: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 10,
-    minHeight: 50,
+    borderRadius: moderateScale(12),
+    padding: moderateScale(12),
+    marginRight: scale(10),
+    minHeight: verticalScale(50),
     justifyContent: 'center',
     elevation: 2,
     shadowColor: '#000',
@@ -262,17 +263,17 @@ const styles = StyleSheet.create({
   },
 
   locationText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: '700',
     color: '#333',
-    lineHeight: 20,
+    lineHeight: verticalScale(20),
   },
 
   bellButton: {
     backgroundColor: '#fff',
-    width: 50,
-    height: 50,
-    borderRadius: 12,
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: moderateScale(12),
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
@@ -284,12 +285,12 @@ const styles = StyleSheet.create({
 
   badge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: verticalScale(-5),
+    right: scale(-5),
     backgroundColor: '#e74c3c',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: scale(22),
+    height: scale(22),
+    borderRadius: scale(11),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
 
   badgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: responsiveFontSize(10),
     fontWeight: '800',
   },
 
@@ -307,19 +308,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: verticalScale(12),
   },
 
   filterText: {
     backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(12),
     color: '#333',
     fontWeight: '600',
     flex: 1,
-    marginRight: 10,
-    fontSize: 13,
+    marginRight: scale(10),
+    fontSize: responsiveFontSize(13),
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -331,9 +332,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    borderRadius: moderateScale(12),
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -344,29 +345,29 @@ const styles = StyleSheet.create({
   filterButtonText: {
     color: '#248907',
     fontWeight: '700',
-    marginLeft: 6,
-    fontSize: 13,
+    marginLeft: scale(6),
+    fontSize: responsiveFontSize(13),
   },
 
   /* LIST */
   scroll: {
     flex: 1,
-    paddingHorizontal: 15,
+    paddingHorizontal: scale(15),
   },
 
   sectionTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '800',
-    marginTop: 20,
-    marginBottom: 15,
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(15),
     color: '#1a1a1a',
   },
 
   rideCard: {
     backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 18,
-    marginBottom: 15,
+    borderRadius: moderateScale(15),
+    padding: moderateScale(18),
+    marginBottom: verticalScale(15),
     elevation: 4,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -380,47 +381,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: verticalScale(12),
   },
 
   timeTag: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#e8f5e9',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(5),
+    borderRadius: moderateScale(8),
   },
 
   timeText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: '700',
     color: '#248907',
-    marginLeft: 5,
+    marginLeft: scale(5),
   },
 
   priceText: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: '800',
     color: '#1a1a1a',
   },
 
   routeText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '700',
     color: '#333',
-    lineHeight: 24,
-    marginBottom: 8,
+    lineHeight: verticalScale(24),
+    marginBottom: verticalScale(8),
   },
 
   carInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
   },
 
   carText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#666',
     fontWeight: '500',
   },
@@ -428,64 +429,64 @@ const styles = StyleSheet.create({
   /* SEAT VISUALIZATION */
   seatContainer: {
     backgroundColor: '#fafafa',
-    padding: 12,
-    borderRadius: 12,
+    padding: moderateScale(12),
+    borderRadius: moderateScale(12),
     borderWidth: 1,
     borderColor: '#f0f0f0',
-    marginBottom: 15,
+    marginBottom: verticalScale(15),
   },
 
   seatPillRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
   },
 
   seatStatPill: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginHorizontal: 4,
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(8),
+    marginHorizontal: scale(4),
   },
 
   seatNum: {
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     fontWeight: '800',
   },
 
   seatLabel: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     color: '#777',
     fontWeight: '600',
     textTransform: 'uppercase',
-    marginTop: 1,
+    marginTop: verticalScale(1),
   },
 
   progressBarBg: {
-    height: 6,
+    height: verticalScale(6),
     backgroundColor: '#eee',
-    borderRadius: 3,
+    borderRadius: moderateScale(3),
     overflow: 'hidden',
   },
 
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: moderateScale(3),
   },
 
   progressCaption: {
-    fontSize: 11,
+    fontSize: responsiveFontSize(11),
     fontWeight: '600',
-    marginTop: 6,
+    marginTop: verticalScale(6),
     textAlign: 'right',
   },
 
   /* DETAILS BUTTON */
   detailsButton: {
     backgroundColor: '#248907',
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: moderateScale(10),
+    paddingVertical: verticalScale(14),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -499,37 +500,38 @@ const styles = StyleSheet.create({
   detailsText: {
     color: '#fff',
     fontWeight: '800',
-    fontSize: 15,
-    marginRight: 5,
+    fontSize: responsiveFontSize(15),
+    marginRight: scale(5),
   },
 
   /* EMPTY STATE */
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 60,
-    paddingHorizontal: 40,
+    marginTop: verticalScale(60),
+    paddingHorizontal: scale(40),
   },
 
   emptyMessage: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#999',
     fontWeight: '600',
-    marginTop: 15,
+    marginTop: verticalScale(15),
     textAlign: 'center',
   },
 
   backButtonUnderEmpty: {
-    marginTop: 25,
+    marginTop: verticalScale(25),
     backgroundColor: '#e8f5e9',
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingHorizontal: scale(25),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(10),
   },
 
   backButtonTextUnderEmpty: {
     color: '#248907',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
   },
 });
+

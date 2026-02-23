@@ -124,7 +124,7 @@ const SupportTickets = () => {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
+            <StatusBar barStyle="dark-content" backgroundColor="#1fa000" />
 
             {/* Header */}
             <View style={styles.header}>

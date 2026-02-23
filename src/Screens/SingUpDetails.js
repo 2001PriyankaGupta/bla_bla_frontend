@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import ImagePicker from 'react-native-image-crop-picker';
@@ -111,7 +112,7 @@ const CreateAccount = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+      <StatusBar barStyle="dark-content" translucent={false} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -122,10 +123,7 @@ const CreateAccount = () => {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Create Account</Text>
 
-            <TouchableOpacity style={styles.headerBell}>
-              <Icon name="bell-outline" size={26} color="#fff" />
-              <View style={styles.notificationDot} />
-            </TouchableOpacity>
+
           </View>
 
           {/* WHITE CONTAINER FLOATING UP */}
@@ -217,105 +215,106 @@ export default CreateAccount;
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#248907',
+    backgroundColor: '#FFF',
   },
 
   /* HEADER */
   header: {
-    paddingTop: 40,
+    paddingTop: verticalScale(40),
     backgroundColor: '#248907',
     justifyContent: 'flex-end',
-    paddingHorizontal: 25,
-    paddingBottom: 20,
+    paddingHorizontal: scale(25),
+    paddingBottom: verticalScale(80), // Increased to compensate for overlap
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   headerTitle: {
     flex: 1,
-    fontSize: 32,
+    fontSize: responsiveFontSize(60),
     fontWeight: '800',
-    color: '#fff',
+    color: '#fff', // Changed back to white for visibility on green background
   },
 
   headerBell: {
-    padding: 8,
+    padding: moderateScale(8),
     position: 'relative',
   },
 
   notificationDot: {
-    width: 9,
-    height: 9,
+    width: scale(9),
+    height: scale(9),
     backgroundColor: 'red',
     position: 'absolute',
-    top: 5,
-    right: 5,
-    borderRadius: 5,
+    top: verticalScale(5),
+    right: scale(5),
+    borderRadius: scale(5),
   },
 
   /* WHITE FLOATING CONTENT BOX */
   contentBox: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop: -60,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    paddingHorizontal: 30,
-    paddingTop: 30,
+    marginTop: verticalScale(-60),
+    borderTopLeftRadius: moderateScale(25),
+    borderTopRightRadius: moderateScale(25),
+    paddingHorizontal: scale(30),
+    paddingTop: verticalScale(30),
   },
 
   photoCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 90,
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(90),
     borderStyle: 'dashed',
     borderWidth: 2,
     borderColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    marginBottom: 35,
+    marginBottom: verticalScale(35),
   },
 
   inputBox: {
     width: '100%',
-    height: 55,
+    height: verticalScale(55),
     borderWidth: 1,
     borderColor: '#6EC16E',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    marginBottom: 18,
+    paddingHorizontal: scale(12),
+    marginBottom: verticalScale(18),
     backgroundColor: '#fff',
   },
 
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#000',
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
 
   nextButton: {
     backgroundColor: '#248907',
-    height: 55,
-    borderRadius: 10,
+    height: verticalScale(55),
+    borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: verticalScale(10),
   },
 
   nextText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
     color: '#fff',
   },
 
   cancelText: {
     textAlign: 'center',
-    marginTop: 18,
-    fontSize: 17,
+    marginTop: verticalScale(18),
+    fontSize: responsiveFontSize(17),
     color: '#000',
   },
 });
+

@@ -1,8 +1,6 @@
-
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   StyleSheet,
@@ -12,6 +10,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -24,8 +24,8 @@ const ProfileSetup = () => {
   const [showGenderOptions, setShowGenderOptions] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" translucent={false} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -137,146 +137,145 @@ const ProfileSetup = () => {
 export default ProfileSetup;
 
 const styles = StyleSheet.create({
-  /* FIXED SAFE AREA */
   safe: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 5 : 0,
+    paddingHorizontal: scale(20),
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    paddingVertical: 10,
+    marginTop: verticalScale(10),
+    paddingVertical: verticalScale(10),
   },
 
   headerTitle: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: '600',
     color: '#000',
     flex: 1,
     textAlign: 'center',
-    marginRight: 24,
+    marginRight: scale(24),
   },
 
   label: {
-    marginTop: 15,
-    fontSize: 16,
+    marginTop: verticalScale(15),
+    fontSize: responsiveFontSize(16),
     fontWeight: '500',
     color: '#000',
   },
 
   input: {
-    height: 55,
+    height: verticalScale(55),
     borderWidth: 1.2,
     borderColor: '#4CAF50',
-    borderRadius: 10,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    borderRadius: moderateScale(10),
+    marginTop: verticalScale(8),
+    paddingHorizontal: scale(12),
+    fontSize: responsiveFontSize(16),
     color: '#000',
   },
 
   genderBox: {
-    height: 55,
+    height: verticalScale(55),
     borderWidth: 1.2,
     borderColor: '#4CAF50',
-    borderRadius: 10,
-    marginTop: 8,
-    paddingHorizontal: 12,
+    borderRadius: moderateScale(10),
+    marginTop: verticalScale(8),
+    paddingHorizontal: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
 
   genderText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#000',
   },
 
   dropdown: {
     borderWidth: 1,
     borderColor: '#4CAF50',
-    marginTop: 5,
-    borderRadius: 10,
+    marginTop: verticalScale(5),
+    borderRadius: moderateScale(10),
     overflow: 'hidden',
   },
 
   option: {
-    padding: 15,
+    padding: moderateScale(15),
     backgroundColor: '#fff',
   },
 
   optionText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     color: '#000',
   },
 
   sectionTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
-    marginTop: 25,
+    marginTop: verticalScale(25),
     color: '#000',
   },
 
   uploadBox: {
-    marginTop: 10,
+    marginTop: verticalScale(10),
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 40,
+    borderRadius: moderateScale(12),
+    paddingVertical: verticalScale(40),
     alignItems: 'center',
   },
 
   uploadTitle: {
-    fontSize: 17,
+    fontSize: responsiveFontSize(17),
     fontWeight: '600',
     color: '#000',
   },
 
   uploadSubtitle: {
-    marginTop: 5,
-    fontSize: 14,
+    marginTop: verticalScale(5),
+    fontSize: responsiveFontSize(14),
     color: '#555',
   },
 
   uploadButton: {
-    marginTop: 20,
+    marginTop: verticalScale(20),
     backgroundColor: '#248907',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 8,
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(30),
+    borderRadius: moderateScale(8),
   },
 
   uploadButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '600',
     color: '#fff',
   },
 
   continueButton: {
     width: '100%',
-    height: 55,
+    height: verticalScale(55),
     backgroundColor: '#248907',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: verticalScale(25),
   },
 
   continueText: {
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     color: '#fff',
     fontWeight: '600',
   },
 
   nextText: {
     textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
+    marginTop: verticalScale(20),
+    fontSize: responsiveFontSize(16),
     color: '#000',
   },
 });
+

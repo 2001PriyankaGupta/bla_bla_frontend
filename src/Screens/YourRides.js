@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, IMG_URL } from '../config/config';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 
 const YourRides = () => {
   const navigation = useNavigation();
@@ -328,15 +329,15 @@ const YourRides = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor="#248907" barStyle="light-content" />
+      <StatusBar backgroundColor="#248907" barStyle="dark-content" translucent={false} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#fff" />
+          <Icon name="arrow-left" size={scale(28)} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Rides</Text>
-        <View style={{ width: 28 }} />
+        <View style={{ width: scale(28) }} />
       </View>
 
       {/* Tabs */}
@@ -360,10 +361,10 @@ const YourRides = () => {
           <ActivityIndicator size="large" color="#248907" />
         </View>
       ) : (
-        <ScrollView style={{ flex: 1, padding: 15 }} contentContainerStyle={{ paddingBottom: 30 }}>
+        <ScrollView style={{ flex: 1, padding: scale(15) }} contentContainerStyle={{ paddingBottom: verticalScale(30) }}>
           {filteredBookings.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Icon name="car-off" size={64} color="#ddd" />
+              <Icon name="car-off" size={scale(64)} color="#ddd" />
               <Text style={styles.emptyText}>No {activeTab} rides found.</Text>
             </View>
           ) : (
@@ -419,7 +420,7 @@ const YourRides = () => {
                     <View style={styles.otherPersonRow}>
                       <Icon
                         name={isIAmCreator ? 'account-arrow-left' : 'account-arrow-right'}
-                        size={16}
+                        size={scale(16)}
                         color="#1fa000"
                       />
                       <Text style={styles.otherPersonText}>
@@ -496,7 +497,7 @@ const YourRides = () => {
                         style={styles.rateBtn}
                         onPress={() => handleRate(item)}
                       >
-                        <Icon name="star-outline" size={16} color="#fff" />
+                        <Icon name="star-outline" size={scale(16)} color="#fff" />
                         <Text style={styles.rateBtnText}>
                           Rate {isIAmCreator ? 'Booker' : 'Creator'}
                         </Text>
@@ -523,9 +524,9 @@ const styles = StyleSheet.create({
 
   /* Header */
   header: {
-    height: 60,
+    height: verticalScale(60),
     backgroundColor: '#248907',
-    paddingHorizontal: 15,
+    paddingHorizontal: scale(15),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -533,7 +534,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: '700',
   },
 
@@ -545,11 +546,11 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 13,
+    paddingVertical: verticalScale(13),
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontWeight: '500',
     color: '#888',
   },
@@ -570,21 +571,21 @@ const styles = StyleSheet.create({
   },
   emptyBox: {
     alignItems: 'center',
-    marginTop: 70,
+    marginTop: verticalScale(70),
   },
   emptyText: {
     color: '#aaa',
-    fontSize: 15,
-    marginTop: 12,
+    fontSize: responsiveFontSize(15),
+    marginTop: verticalScale(12),
     fontWeight: '500',
   },
 
   /* Ride Card */
   rideCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 15,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    marginBottom: verticalScale(15),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -595,64 +596,64 @@ const styles = StyleSheet.create({
   /* Card Top */
   cardTop: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: verticalScale(12),
   },
   routeText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: 5,
+    marginBottom: verticalScale(5),
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: verticalScale(5),
   },
   metaText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#888',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   priceText: {
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     fontWeight: '700',
     color: '#248907',
-    marginBottom: 6,
+    marginBottom: verticalScale(6),
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    marginBottom: 5,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(3),
+    borderRadius: moderateScale(20),
+    marginBottom: verticalScale(5),
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 5,
+    marginRight: scale(5),
   },
   statusText: {
-    fontSize: 10,
+    fontSize: responsiveFontSize(10),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   roleLabel: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#aaa',
-    marginTop: 2,
+    marginTop: verticalScale(2),
   },
   roleBold: {
     color: '#248907',
     fontWeight: '700',
   },
   carImg: {
-    width: 85,
-    height: 85,
-    borderRadius: 12,
-    marginLeft: 12,
+    width: scale(85),
+    height: scale(85),
+    borderRadius: moderateScale(12),
+    marginLeft: scale(12),
   },
 
   /* Other Person Row */
@@ -660,16 +661,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0faf0',
-    padding: 9,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: moderateScale(9),
+    borderRadius: moderateScale(8),
+    marginBottom: verticalScale(12),
     borderWidth: 1,
     borderColor: '#d4edda',
   },
   otherPersonText: {
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
     color: '#555',
-    marginLeft: 7,
+    marginLeft: scale(7),
   },
   otherPersonName: {
     fontWeight: '700',
@@ -681,7 +682,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: scale(8),
   },
 
   /* Details Button */
@@ -689,15 +690,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#248907',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   detailsBtnText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
 
   /* Message Button */
@@ -705,17 +706,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ebf5fb',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
     borderWidth: 1,
     borderColor: '#2980b9',
   },
   msgBtnText: {
     color: '#2980b9',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
 
   /* Call Button */
@@ -723,17 +724,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#eafaf1',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
     borderWidth: 1,
     borderColor: '#27ae60',
   },
   callBtnText: {
     color: '#27ae60',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
 
   /* Confirm Button */
@@ -741,15 +742,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#27ae60',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   confirmBtnText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
 
   /* Cancel Button */
@@ -757,30 +758,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#e74c3c',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   cancelBtnText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   /* Complete Button */
   completeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1fa000',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   completeBtnText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
 
   /* Rate Button */
@@ -788,28 +789,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f39c12',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   rateBtnText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     fontWeight: '700',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   reduceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3f51b5',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: '#3498db',
+    paddingVertical: verticalScale(7),
+    paddingHorizontal: scale(12),
+    borderRadius: moderateScale(8),
   },
   reduceBtnText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 4,
+    fontSize: responsiveFontSize(12),
+    fontWeight: '600',
+    marginLeft: scale(4),
   },
 });

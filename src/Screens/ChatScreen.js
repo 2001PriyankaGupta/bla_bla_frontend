@@ -292,7 +292,7 @@ const ChatScreen = () => {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <StatusBar backgroundColor="#248907" barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
 
             {/* Header */}
             <View style={styles.header}>
@@ -315,8 +315,8 @@ const ChatScreen = () => {
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
             >
                 {loading ? (
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -406,6 +406,7 @@ const styles = StyleSheet.create({
         padding: 15,
         backgroundColor: '#248907',
         elevation: 4,
+        marginTop: 35,
     },
     backButton: {
         marginRight: 15,
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 15,
-        paddingBottom: 20,
+        paddingBottom: 50,
     },
     messageBubble: {
         maxWidth: '80%',

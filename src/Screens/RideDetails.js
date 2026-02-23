@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
 import DatePicker from 'react-native-date-picker';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 
 const RideDetails = () => {
     const navigation = useNavigation();
@@ -281,8 +282,8 @@ const RideDetails = () => {
     if (!rideData) return null;
 
     return (
-        <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="dark-content" />
+        <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+            <StatusBar barStyle="dark-content" translucent={false} />
 
             {/* Header */}
             <View style={styles.headerView}>
@@ -582,21 +583,31 @@ export default RideDetails;
 
 const styles = StyleSheet.create({
     safe: {
-        flex: 1, backgroundColor: '#fff',
+        flex: 1,
+        backgroundColor: '#fff',
     },
     headerView: {
-        flexDirection: 'row', alignItems: 'center', paddingVertical: 15, marginBottom: 10, paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: verticalScale(15),
+        marginBottom: verticalScale(10),
+        paddingHorizontal: scale(20),
     },
     headerText: {
-        fontSize: 20, fontWeight: '600', color: '#000', flex: 1, textAlign: 'center', marginRight: 24,
+        fontSize: responsiveFontSize(20),
+        fontWeight: '600',
+        color: '#000',
+        flex: 1,
+        textAlign: 'center',
+        marginRight: scale(24),
     },
     // New Styles
     routeCard: {
         backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
+        borderRadius: moderateScale(12),
+        padding: moderateScale(20),
         marginHorizontal: 0,
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
         elevation: 2,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
@@ -610,25 +621,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     routePoint: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: '700',
         color: '#333',
-        marginLeft: 10,
+        marginLeft: scale(10),
     },
     routeConnector: {
-        marginLeft: 9,
+        marginLeft: scale(9),
         borderLeftWidth: 2,
         borderLeftColor: '#ddd',
-        height: 30,
-        marginVertical: 4,
+        height: verticalScale(30),
+        marginVertical: verticalScale(4),
         alignItems: 'center',
         justifyContent: 'center'
     },
     infoCard: {
         backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
-        marginBottom: 15,
+        borderRadius: moderateScale(12),
+        padding: moderateScale(20),
+        marginBottom: verticalScale(15),
         elevation: 2,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
@@ -648,115 +659,149 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     infoLabel: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         color: '#777',
-        marginBottom: 2
+        marginBottom: verticalScale(2)
     },
     infoValue: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: '600',
         color: '#333',
     },
     divider: {
         height: 1,
         backgroundColor: '#eee',
-        marginVertical: 15,
+        marginVertical: verticalScale(15),
     },
     cardTitle: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         fontWeight: '700',
         color: '#000',
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     carInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     carName: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: '700',
         color: '#333',
     },
     carDetailText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#555',
-        marginTop: 2
+        marginTop: verticalScale(2)
     },
     plateBox: {
         backgroundColor: '#ffeb3b', // Yellow plate style
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginTop: 5,
+        paddingHorizontal: scale(8),
+        paddingVertical: verticalScale(2),
+        borderRadius: moderateScale(4),
+        marginTop: verticalScale(5),
         alignSelf: 'flex-start',
         borderWidth: 1,
         borderColor: '#fbc02d'
     },
     plateText: {
-        fontSize: 12,
+        fontSize: responsiveFontSize(12),
         fontWeight: '700',
         color: '#000'
     },
     luggageRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 15,
+        marginTop: verticalScale(15),
         backgroundColor: '#f9f9f9',
-        padding: 10,
-        borderRadius: 8
+        padding: moderateScale(10),
+        borderRadius: moderateScale(8)
     },
     editContainer: {
         backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 12,
-        marginBottom: 20,
+        padding: moderateScale(15),
+        borderRadius: moderateScale(12),
+        marginBottom: verticalScale(20),
         borderWidth: 1,
         borderColor: '#eee'
     },
     editTitle: {
-        fontSize: 18,
+        fontSize: responsiveFontSize(18),
         fontWeight: '700',
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
         color: '#248907'
     },
     detailsContainer: {
-        marginBottom: 20,
+        marginBottom: verticalScale(20),
     },
     fieldContainer: {
-        marginBottom: 15,
+        marginBottom: verticalScale(15),
     },
     row: {
         flexDirection: 'row',
     },
     label: {
-        fontSize: 14, color: '#777', marginBottom: 5,
+        fontSize: responsiveFontSize(14),
+        color: '#777',
+        marginBottom: verticalScale(5),
     },
     value: {
-        fontSize: 18, color: '#000', fontWeight: '500',
+        fontSize: responsiveFontSize(18),
+        color: '#000',
+        fontWeight: '500',
     },
     input: {
-        borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 16, color: '#000',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: moderateScale(8),
+        padding: moderateScale(10),
+        fontSize: responsiveFontSize(16),
+        color: '#000',
     },
     deleteButton: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#d32f2f', padding: 15, borderRadius: 10, marginTop: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#d32f2f',
+        padding: moderateScale(15),
+        borderRadius: moderateScale(10),
+        marginTop: verticalScale(10),
     },
     deleteText: {
-        color: '#fff', fontSize: 16, fontWeight: '600', marginLeft: 8,
+        color: '#fff',
+        fontSize: responsiveFontSize(16),
+        fontWeight: '600',
+        marginLeft: scale(8),
     },
     actionButtons: {
-        flexDirection: 'row', justifyContent: 'space-between', marginTop: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: verticalScale(10),
     },
     cancelButton: {
-        flex: 1, backgroundColor: '#eee', padding: 15, borderRadius: 10, marginRight: 10, alignItems: 'center',
+        flex: 1,
+        backgroundColor: '#eee',
+        padding: moderateScale(15),
+        borderRadius: moderateScale(10),
+        marginRight: scale(10),
+        alignItems: 'center',
     },
     cancelText: {
-        color: '#333', fontSize: 16, fontWeight: '600',
+        color: '#333',
+        fontSize: responsiveFontSize(16),
+        fontWeight: '600',
     },
     saveButton: {
-        flex: 1, backgroundColor: '#248907', padding: 15, borderRadius: 10, marginLeft: 10, alignItems: 'center',
+        flex: 1,
+        backgroundColor: '#248907',
+        padding: moderateScale(15),
+        borderRadius: moderateScale(10),
+        marginLeft: scale(10),
+        alignItems: 'center',
     },
     saveText: {
-        color: '#fff', fontSize: 16, fontWeight: '600',
+        color: '#fff',
+        fontSize: responsiveFontSize(16),
+        fontWeight: '600',
     },
     dropdownButton: {
         flexDirection: 'row',
@@ -765,21 +810,21 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 10,
+        padding: moderateScale(12),
+        borderRadius: moderateScale(8),
+        marginBottom: verticalScale(10),
     },
     dropdownButtonText: {
-        fontSize: 16,
+        fontSize: responsiveFontSize(16),
         color: '#333',
     },
     dropdownList: {
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#eee',
-        borderRadius: 8,
-        marginTop: -5,
-        marginBottom: 15,
+        borderRadius: moderateScale(8),
+        marginTop: verticalScale(-5),
+        marginBottom: verticalScale(15),
         elevation: 2,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
@@ -789,62 +834,57 @@ const styles = StyleSheet.create({
     dropdownItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
+        padding: moderateScale(12),
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
     },
     dropdownItemText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#333',
         fontWeight: '500',
     },
-    // Suggestion Styles
-    suggestionsContainer: {
-        position: 'absolute',
-        top: 75, // Below label + input
-        left: 0,
-        right: 0,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        elevation: 10,
-        zIndex: 1000,
-        maxHeight: 150,
+    statusButton: {
+        flex: 1,
+        padding: moderateScale(12),
         borderWidth: 1,
         borderColor: '#ddd',
+        borderRadius: moderateScale(8),
+        alignItems: 'center',
+        marginHorizontal: scale(5),
+    },
+    activeStatus: {
+        backgroundColor: '#248907',
+        borderColor: '#248907',
+    },
+    inactiveStatus: {
+        backgroundColor: '#d32f2f',
+        borderColor: '#d32f2f',
+    },
+    statusText: {
+        fontSize: responsiveFontSize(14),
+        fontWeight: '600',
+        color: '#333',
+    },
+    suggestionsContainer: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: moderateScale(8),
+        marginTop: verticalScale(-5),
+        marginBottom: verticalScale(10),
+        maxHeight: verticalScale(200),
+        elevation: 5,
     },
     suggestionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
+        padding: moderateScale(12),
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: '#eee',
     },
     suggestionText: {
-        fontSize: 14,
+        fontSize: responsiveFontSize(14),
         color: '#333',
-        flex: 1,
     },
-    // Status Styles
-    statusButton: {
-        flex: 1,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        alignItems: 'center',
-        marginRight: 10
-    },
-    activeStatus: {
-        backgroundColor: '#248907',
-        borderColor: '#248907'
-    },
-    inactiveStatus: {
-        backgroundColor: '#d32f2f',
-        borderColor: '#d32f2f'
-    },
-    statusText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#555'
-    }
 });
+

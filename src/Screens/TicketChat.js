@@ -125,7 +125,7 @@ const TicketChat = () => {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
+            <StatusBar barStyle="dark-content" backgroundColor="#1fa000" />
 
             {/* Header */}
             <View style={styles.header}>
@@ -161,8 +161,8 @@ const TicketChat = () => {
                     />
 
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
                     >
                         <View style={styles.inputContainer}>
                             <TextInput
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     },
     chatContainer: {
         padding: 15,
-        paddingBottom: 20,
+        paddingBottom: 50,
     },
     ticketInfoCard: {
         backgroundColor: '#fff',

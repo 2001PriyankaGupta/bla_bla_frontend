@@ -1,13 +1,14 @@
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   Image,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -83,8 +84,8 @@ const SignUp = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent />
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right', 'top']}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
       {/* Title */}
       <Text style={styles.title}>Let’s You In</Text>
@@ -140,37 +141,37 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#fff',
-    paddingTop: 80,
+    paddingTop: verticalScale(40),
   },
 
   title: {
-    fontSize: 38,
+    fontSize: responsiveFontSize(38),
     fontWeight: '800',
     textAlign: 'center',
-    marginTop: 60,
+    marginTop: verticalScale(40),
     width: '80%',
   },
 
   SignUp: {
     width: '80%',
-    height: 55,
+    height: verticalScale(55),
     backgroundColor: '#248907',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: verticalScale(60),
   },
 
   text: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '700',
   },
 
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 35,
+    marginVertical: verticalScale(35),
     width: '80%',
   },
   line: {
@@ -179,23 +180,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#dcdcdc',
   },
   orText: {
-    marginHorizontal: 15,
+    marginHorizontal: scale(15),
     color: '#000',
-    fontSize: 18,
+    fontSize: responsiveFontSize(18),
     fontWeight: '600',
   },
 
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 30,
-    marginBottom: 40,
+    gap: scale(30),
+    marginBottom: verticalScale(40),
   },
   socialBtn: {
-    padding: 15,
+    padding: moderateScale(15),
     borderWidth: 1,
     borderColor: '#dcdcdc',
-    borderRadius: 15,
+    borderRadius: moderateScale(15),
     backgroundColor: '#fff',
     elevation: 2,
     shadowColor: '#000',
@@ -204,30 +205,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   socialIcon: {
-    width: 32,
-    height: 32,
+    width: scale(32),
+    height: scale(32),
     resizeMode: 'contain',
   },
 
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: verticalScale(20),
   },
 
   footerText: {
-    fontSize: 17,
+    fontSize: responsiveFontSize(17),
     color: '#000',
-    marginRight: 10,
+    marginRight: scale(10),
     fontWeight: '500',
   },
 
   arrowCircle: {
     backgroundColor: '#248907',
-    width: 35,
-    height: 35,
-    borderRadius: 35,
+    width: scale(35),
+    height: scale(35),
+    borderRadius: scale(35),
     justifyContent: 'center',
     alignItems: 'center',
   },
 });
+

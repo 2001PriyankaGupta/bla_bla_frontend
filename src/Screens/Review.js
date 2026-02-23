@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   Image,
@@ -16,6 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { BASE_URL, IMG_URL } from '../config/config';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Review = () => {
   const navigation = useNavigation();
@@ -92,10 +93,10 @@ const Review = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#1fa000" />
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+      <StatusBar barStyle="dark-content" translucent={false} />
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: verticalScale(30) }}>
 
         {/* ── Header ── */}
         <View style={styles.header}>
@@ -250,27 +251,27 @@ const styles = StyleSheet.create({
   },
   loadingBox: {
     alignItems: 'center',
-    marginTop: 80,
+    marginTop: verticalScale(80),
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: verticalScale(12),
     color: '#999',
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
   },
 
   /* Header */
   header: {
     backgroundColor: '#1fa000',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 14 : 20,
-    paddingBottom: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(15),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 6,
+    marginTop :35,
   },
   headerText: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     color: '#fff',
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -279,9 +280,9 @@ const styles = StyleSheet.create({
   /* Rating Summary Card */
   ratingCard: {
     backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 18,
-    padding: 20,
+    margin: moderateScale(16),
+    borderRadius: moderateScale(18),
+    padding: moderateScale(20),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
@@ -292,22 +293,22 @@ const styles = StyleSheet.create({
   },
   ratingLeft: {
     alignItems: 'center',
-    marginRight: 20,
-    minWidth: 80,
+    marginRight: scale(20),
+    minWidth: scale(80),
   },
   bigRating: {
-    fontSize: 56,
+    fontSize: responsiveFontSize(50),
     fontWeight: '900',
-    lineHeight: 62,
+    lineHeight: verticalScale(55),
   },
   starRow: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: verticalScale(4),
   },
   totalText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#888',
-    marginTop: 4,
+    marginTop: verticalScale(4),
     fontWeight: '500',
   },
   ratingRight: {
@@ -316,32 +317,32 @@ const styles = StyleSheet.create({
   barRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: verticalScale(5),
   },
   barLabel: {
-    width: 14,
-    fontSize: 12,
+    width: scale(14),
+    fontSize: responsiveFontSize(12),
     color: '#555',
     fontWeight: '700',
     textAlign: 'right',
-    marginRight: 3,
+    marginRight: scale(3),
   },
   barBg: {
     flex: 1,
-    height: 7,
+    height: verticalScale(7),
     backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    marginHorizontal: 6,
+    borderRadius: moderateScale(4),
+    marginHorizontal: scale(6),
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
     backgroundColor: '#1fa000',
-    borderRadius: 4,
+    borderRadius: moderateScale(4),
   },
   barCount: {
-    width: 20,
-    fontSize: 11,
+    width: scale(20),
+    fontSize: responsiveFontSize(11),
     color: '#999',
     textAlign: 'right',
   },
@@ -351,49 +352,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: '#e8f5e9',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 10,
-    padding: 12,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(12),
+    borderRadius: moderateScale(10),
+    padding: moderateScale(12),
     borderLeftWidth: 3,
     borderLeftColor: '#1fa000',
   },
   infoText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#2d6a2f',
-    marginLeft: 8,
-    lineHeight: 18,
+    marginLeft: scale(8),
+    lineHeight: verticalScale(18),
     fontWeight: '500',
   },
 
   /* Empty State */
   emptyBox: {
     alignItems: 'center',
-    marginTop: 60,
-    paddingHorizontal: 40,
+    marginTop: verticalScale(60),
+    paddingHorizontal: scale(40),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     fontWeight: '700',
     color: '#444',
-    marginTop: 16,
+    marginTop: verticalScale(16),
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: '#999',
-    marginTop: 8,
+    marginTop: verticalScale(8),
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: verticalScale(20),
   },
 
   /* Review Card */
   reviewCard: {
     backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginBottom: 14,
-    borderRadius: 16,
-    padding: 18,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(14),
+    borderRadius: moderateScale(16),
+    padding: moderateScale(18),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -407,33 +408,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     backgroundColor: '#eee',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   reviewerInfo: {
     flex: 1,
   },
   reviewerName: {
-    fontSize: 15,
+    fontSize: responsiveFontSize(15),
     fontWeight: '700',
     color: '#1a1a1a',
   },
   reviewDate: {
-    fontSize: 11,
+    fontSize: responsiveFontSize(11),
     color: '#aaa',
-    marginTop: 2,
+    marginTop: verticalScale(2),
   },
 
   /* Role Badge */
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(20),
   },
   badgeCreator: {
     backgroundColor: '#1fa000',
@@ -442,7 +443,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2980b9',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: responsiveFontSize(10),
     color: '#fff',
     fontWeight: '700',
     letterSpacing: 0.2,
@@ -450,25 +451,25 @@ const styles = StyleSheet.create({
 
   /* Stars & Rating */
   ratingNum: {
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
     color: '#888',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontWeight: '600',
   },
 
   /* Comment */
   commentText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: '#444',
-    lineHeight: 22,
+    lineHeight: verticalScale(22),
     fontStyle: 'italic',
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
   },
   noComment: {
-    fontSize: 13,
+    fontSize: responsiveFontSize(13),
     color: '#bbb',
     fontStyle: 'italic',
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
   },
 
   /* Route */
@@ -476,15 +477,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 4,
+    padding: moderateScale(8),
+    borderRadius: moderateScale(8),
+    marginTop: verticalScale(4),
   },
   routeText: {
-    fontSize: 12,
+    fontSize: responsiveFontSize(12),
     color: '#555',
-    marginLeft: 6,
+    marginLeft: scale(6),
     flex: 1,
     fontWeight: '500',
   },
 });
+

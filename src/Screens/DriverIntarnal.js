@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   StatusBar,
   Image,
@@ -19,6 +18,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, IMG_URL } from '../config/config';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DriverIntarnal = () => {
   const navigation = useNavigation();
@@ -174,8 +175,8 @@ const DriverIntarnal = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#248907" />
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
@@ -514,31 +515,56 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#f2f4f7',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
   },
-  errorBox: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 80 },
-  errorText: { color: '#aaa', fontSize: 15, marginTop: 10 },
+  errorBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: verticalScale(80)
+  },
+  errorText: {
+    color: '#aaa',
+    fontSize: responsiveFontSize(15),
+    marginTop: verticalScale(10)
+  },
 
   /* ── Header ── */
   header: {
     backgroundColor: '#248907',
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 22,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingHorizontal: scale(18),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(22),
+    borderBottomLeftRadius: moderateScale(24),
+    borderBottomRightRadius: moderateScale(24),
+    marginTop: 35,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  backBtn: { padding: 4, marginRight: 10 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  dateText: { color: 'rgba(255,255,255,0.85)', fontSize: 13, marginBottom: 14, fontWeight: '500' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(8)
+  },
+  backBtn: {
+    padding: scale(4),
+    marginRight: scale(10)
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700'
+  },
+  dateText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: responsiveFontSize(13),
+    marginBottom: verticalScale(14),
+    fontWeight: '500'
+  },
 
   /* ── Timeline card ── */
   timelineCard: {
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    borderRadius: moderateScale(14),
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(14),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -547,33 +573,57 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   tlDotCol: {
-    width: 20,
+    width: scale(20),
     alignItems: 'center',
-    marginRight: 10,
-    paddingTop: 3,
+    marginRight: scale(10),
+    paddingTop: verticalScale(3),
   },
-  dotGreen: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#fff', borderWidth: 2.5, borderColor: '#a5d6a7' },
-  dotRed: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#ff6b6b', borderWidth: 2.5, borderColor: 'rgba(255,107,107,0.4)' },
-  tlLine: { width: 2, height: 10, backgroundColor: 'rgba(255,255,255,0.35)', marginVertical: 1 },
+  dotGreen: {
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderColor: '#a5d6a7'
+  },
+  dotRed: {
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
+    backgroundColor: '#ff6b6b',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255,107,107,0.4)'
+  },
+  tlLine: {
+    width: 2,
+    height: verticalScale(10),
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginVertical: 1
+  },
   tlTextCol: {
     flex: 1,
-    marginRight: 10,
+    marginRight: scale(10),
   },
-  tlTime: { color: 'rgba(255,255,255,0.8)', fontSize: 11, marginBottom: 2, fontWeight: '500' },
+  tlTime: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: responsiveFontSize(11),
+    marginBottom: verticalScale(2),
+    fontWeight: '500'
+  },
   tlPlace: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 13.5,
-    lineHeight: 19,
+    fontSize: responsiveFontSize(13.5),
+    lineHeight: verticalScale(19),
   },
   tlIcon: {
-    width: 32,
-    height: 32,
+    width: scale(32),
+    height: scale(32),
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 10,
+    borderRadius: moderateScale(10),
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: verticalScale(2),
   },
 
   /* Duration chip */
@@ -582,95 +632,178 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginTop: 14,
+    marginTop: verticalScale(14),
     backgroundColor: 'rgba(255,255,255,0.95)',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(20),
   },
-  durationText: { color: '#248907', fontSize: 13, fontWeight: '700' },
+  durationText: {
+    color: '#248907',
+    fontSize: responsiveFontSize(13),
+    fontWeight: '700'
+  },
 
   /* ── Section ── */
-  section: { backgroundColor: '#fff', marginTop: 10, paddingHorizontal: 18, paddingVertical: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 14 },
+  section: {
+    backgroundColor: '#fff',
+    marginTop: verticalScale(10),
+    paddingHorizontal: scale(18),
+    paddingVertical: verticalScale(16)
+  },
+  sectionTitle: {
+    fontSize: responsiveFontSize(15),
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(14)
+  },
 
   /* ── Info card ── */
   infoCard: {
     backgroundColor: '#f8f9fb',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderRadius: moderateScale(12),
+    paddingHorizontal: scale(14),
     borderWidth: 1,
     borderColor: '#eee',
   },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: verticalScale(13)
+  },
   infoIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
+    width: scale(30),
+    height: scale(30),
+    borderRadius: moderateScale(8),
     backgroundColor: '#e8f5e9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: scale(10),
   },
-  infoLabel: { flex: 1, color: '#666', fontSize: 13, fontWeight: '500' },
-  infoValue: { color: '#1a1a1a', fontSize: 13, fontWeight: '600' },
+  infoLabel: {
+    flex: 1,
+    color: '#666',
+    fontSize: responsiveFontSize(13),
+    fontWeight: '500'
+  },
+  infoValue: {
+    color: '#1a1a1a',
+    fontSize: responsiveFontSize(13),
+    fontWeight: '600'
+  },
   divider: { height: 1, backgroundColor: '#f0f0f0' },
 
   /* ── Person card ── */
   personCardOuter: {
     backgroundColor: '#f8f9fb',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: moderateScale(12),
+    padding: moderateScale(14),
     borderWidth: 1,
     borderColor: '#eee',
   },
   personCard: { flexDirection: 'row', alignItems: 'center' },
-  personImg: { width: 54, height: 54, borderRadius: 27, marginRight: 14, backgroundColor: '#e0e0e0', borderWidth: 2, borderColor: '#e8f5e9' },
-  personName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
-  personTag: { color: '#248907', fontSize: 12, marginTop: 2, fontWeight: '500' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  ratingText: { fontSize: 12, color: '#555', fontWeight: '600' },
-  noteText: { color: '#777', fontSize: 12, fontStyle: 'italic', lineHeight: 18, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
+  personImg: {
+    width: scale(54),
+    height: scale(54),
+    borderRadius: scale(27),
+    marginRight: scale(14),
+    backgroundColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#e8f5e9'
+  },
+  personName: {
+    fontSize: responsiveFontSize(16),
+    fontWeight: '700',
+    color: '#1a1a1a'
+  },
+  personTag: {
+    color: '#248907',
+    fontSize: responsiveFontSize(12),
+    marginTop: verticalScale(2),
+    fontWeight: '500'
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: verticalScale(4) },
+  ratingText: {
+    fontSize: responsiveFontSize(12),
+    color: '#555',
+    fontWeight: '600'
+  },
+  noteText: {
+    color: '#777',
+    fontSize: responsiveFontSize(12),
+    fontStyle: 'italic',
+    lineHeight: verticalScale(18),
+    marginTop: verticalScale(10),
+    paddingTop: verticalScale(10),
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0'
+  },
 
   /* ── Preferences ── */
   prefCard: {
     backgroundColor: '#f8f9fb',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
+    borderRadius: moderateScale(12),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(4),
     borderWidth: 1,
     borderColor: '#eee',
   },
-  prefRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  prefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: verticalScale(12)
+  },
   prefIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: scale(34),
+    height: scale(34),
+    borderRadius: moderateScale(10),
     backgroundColor: '#e8f5e9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
-  prefTitle: { fontWeight: '600', color: '#1a1a1a', fontSize: 13 },
-  prefSub: { fontSize: 11, color: '#aaa', marginTop: 2 },
+  prefTitle: {
+    fontWeight: '600',
+    color: '#1a1a1a',
+    fontSize: responsiveFontSize(13)
+  },
+  prefSub: {
+    fontSize: responsiveFontSize(11),
+    color: '#aaa',
+    marginTop: verticalScale(2)
+  },
   prefDivider: { height: 1, backgroundColor: '#f0f0f0' },
 
   /* ── Policy ── */
   policyCard: {
     flexDirection: 'row',
     backgroundColor: '#f8f9fb',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: moderateScale(12),
+    padding: moderateScale(14),
     borderWidth: 1,
     borderColor: '#eee',
   },
-  policyText: { flex: 1, color: '#666', lineHeight: 20, fontSize: 13 },
+  policyText: {
+    flex: 1,
+    color: '#666',
+    lineHeight: verticalScale(20),
+    fontSize: responsiveFontSize(13)
+  },
 
   /* ── Buttons ── */
-  btnRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  btnRow: {
+    flexDirection: 'row',
+    gap: scale(10),
+    marginBottom: verticalScale(10)
+  },
   btnRed: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#c62828', paddingVertical: 13, borderRadius: 12,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#c62828',
+    paddingVertical: verticalScale(13),
+    borderRadius: moderateScale(12),
     elevation: 2,
     shadowColor: '#c62828',
     shadowOffset: { width: 0, height: 2 },
@@ -678,8 +811,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   btnBlue: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#1565c0', paddingVertical: 13, borderRadius: 12,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1565c0',
+    paddingVertical: verticalScale(13),
+    borderRadius: moderateScale(12),
     elevation: 2,
     shadowColor: '#1565c0',
     shadowOffset: { width: 0, height: 2 },
@@ -687,25 +825,38 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   btnShare: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: '#248907', paddingVertical: 11, borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#248907',
+    paddingVertical: verticalScale(11),
+    borderRadius: moderateScale(12),
     backgroundColor: '#f1f8e9',
   },
   btnGreen: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#248907', paddingVertical: 14, borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#248907',
+    paddingVertical: verticalScale(14),
+    borderRadius: moderateScale(12),
     elevation: 3,
     shadowColor: '#248907',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  btnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  btnTxt: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: responsiveFontSize(14)
+  },
   /* ── Review Style ── */
   reviewShowCard: {
     backgroundColor: '#fff9ef',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: moderateScale(12),
+    padding: moderateScale(14),
     borderWidth: 1,
     borderColor: '#ffeaa7',
   },
@@ -713,9 +864,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
   },
   starRow: { flexDirection: 'row' },
-  reviewDateText: { fontSize: 11, color: '#999' },
-  reviewCommentText: { fontSize: 13, color: '#555', fontStyle: 'italic', lineHeight: 18 },
+  reviewDateText: { fontSize: responsiveFontSize(11), color: '#999' },
+  reviewCommentText: {
+    fontSize: responsiveFontSize(13),
+    color: '#555',
+    fontStyle: 'italic',
+    lineHeight: verticalScale(18)
+  },
 });
+
