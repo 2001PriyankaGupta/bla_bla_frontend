@@ -9,29 +9,7 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useEffect } from 'react';
-
-// ...
-
 export default function TabNavigation({ route }) {
-  const [userType, setUserType] = useState(null);
-
-  useEffect(() => {
-    const checkUserType = async () => {
-      try {
-        const userDataStr = await AsyncStorage.getItem('user_data');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          setUserType(userData.user_type);
-        }
-      } catch (error) {
-        console.error("Error fetching user type:", error);
-      }
-    };
-    checkUserType();
-  }, []);
-
   // Screens where ONLY 2 tabs should show
   const twoTabScreens = ["RideBookingPage"];
 

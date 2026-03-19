@@ -23,6 +23,7 @@ const Inbox = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
 
   const fetchNotifications = async () => {
     try {
@@ -81,6 +82,9 @@ const Inbox = () => {
       case 'booking_request': return 'calendar-clock';
       case 'booking_status_updated': return 'calendar-check';
       case 'booking_cancelled_by_passenger': return 'calendar-remove';
+      case 'booking_placed': return 'calendar-plus';
+      case 'booking_updated': return 'calendar-edit';
+      case 'new_ride_booking': return 'car-plus';
       default: return 'bell-outline';
     }
   };
@@ -143,7 +147,9 @@ const Inbox = () => {
           activeTab === 'Notifications' ? (
             <View>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Updates</Text>
+                <Text style={styles.sectionTitle}>
+                  Recent Updates {notifications.filter(n => !n.is_read).length > 0 ? `(${notifications.filter(n => !n.is_read).length} New)` : ''}
+                </Text>
                 {notifications.some(n => !n.is_read) && (
                   <TouchableOpacity onPress={markAllRead}>
                     <Text style={styles.markAllText}>Mark all as read</Text>
@@ -152,33 +158,55 @@ const Inbox = () => {
               </View>
 
               {notifications.length > 0 ? (
-                notifications.map(item => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.notificationItem, !item.is_read && styles.unreadItem]}
-                    onPress={() => markAsRead(item.id)}
-                  >
-                    <View style={[styles.notifIconContainer, !item.is_read && styles.unreadIconContainer]}>
-                      <Icon
-                        name={getNotifIcon(item.type)}
-                        size={24}
-                        color={item.is_read ? "#777" : "#248907"}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.notifHeader}>
-                        <Text style={[styles.notifTitle, !item.is_read && styles.unreadText]}>
-                          {item.title}
-                        </Text>
-                        {!item.is_read && <View style={styles.unreadDot} />}
+                <>
+                  {(showAllNotifications ? notifications : notifications.slice(0, 3)).map(item => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.notificationItem, !item.is_read && styles.unreadItem]}
+                      onPress={() => markAsRead(item.id)}
+                    >
+                      <View style={[styles.notifIconContainer, !item.is_read && styles.unreadIconContainer]}>
+                        <Icon
+                          name={getNotifIcon(item.type)}
+                          size={24}
+                          color={item.is_read ? "#777" : "#248907"}
+                        />
                       </View>
-                      <Text style={styles.notifDesc}>{item.message}</Text>
-                      <Text style={styles.notifTime}>
-                        {new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.notifHeader}>
+                          <Text style={[styles.notifTitle, !item.is_read && styles.unreadText]}>
+                            {item.title}
+                          </Text>
+                          {!item.is_read && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notifDesc}>{item.message}</Text>
+                        <Text style={styles.notifTime}>
+                          {new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+
+                  {notifications.length > 3 && !showAllNotifications && (
+                    <TouchableOpacity
+                      style={styles.readMoreBtn}
+                      onPress={() => setShowAllNotifications(true)}
+                    >
+                      <Text style={styles.readMoreText}>Read More ({notifications.length - 3} more)</Text>
+                      <Icon name="chevron-down" size={20} color="#248907" />
+                    </TouchableOpacity>
+                  )}
+
+                  {notifications.length > 3 && showAllNotifications && (
+                    <TouchableOpacity
+                      style={styles.readMoreBtn}
+                      onPress={() => setShowAllNotifications(false)}
+                    >
+                      <Text style={styles.readMoreText}>View Less</Text>
+                      <Icon name="chevron-up" size={20} color="#248907" />
+                    </TouchableOpacity>
+                  )}
+                </>
               ) : (
                 <View style={styles.emptyContainer}>
                   <Icon name="bell-off-outline" size={60} color="#eee" />
@@ -344,6 +372,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#999',
     marginTop: 8,
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  readMoreText: {
+    fontSize: 14,
+    color: '#248907',
+    fontWeight: '600',
+    marginRight: 5,
   },
   supportItem: {
     flexDirection: 'row',

@@ -398,7 +398,6 @@ const styles = StyleSheet.create({
     safe: {
         flex: 1,
         backgroundColor: '#fff',
-        marginTop: 10,
     },
     header: {
         flexDirection: 'row',
@@ -406,7 +405,7 @@ const styles = StyleSheet.create({
         padding: 15,
         backgroundColor: '#248907',
         elevation: 4,
-        marginTop: 35,
+
     },
     backButton: {
         marginRight: 15,

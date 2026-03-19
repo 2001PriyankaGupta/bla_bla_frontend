@@ -26,11 +26,28 @@ const YourRides = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
+      const response = await axios.get(`${BASE_URL}notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status === 'success') {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
       fetchBookings();
       fetchUserId();
+      fetchUnreadCount();
     }, [])
   );
 
@@ -337,7 +354,17 @@ const YourRides = () => {
           <Icon name="arrow-left" size={scale(28)} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Rides</Text>
-        <View style={{ width: scale(28) }} />
+        <TouchableOpacity
+          style={styles.bellButton}
+          onPress={() => navigation.navigate('Inbox')}
+        >
+          <Icon name="bell-outline" size={scale(24)} color="#fff" />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}
@@ -536,6 +563,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: responsiveFontSize(20),
     fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  bellButton: {
+    padding: scale(5),
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#e74c3c',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: 'bold',
   },
 
   /* Tabs */

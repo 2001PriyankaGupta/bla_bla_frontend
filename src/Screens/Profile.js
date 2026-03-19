@@ -24,11 +24,35 @@ import axios from 'axios';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { BASE_URL, IMG_URL } from '../config/config';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = () => {
   const navigation = useNavigation();
   const [switchRole, setSwitchRole] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
+      const response = await axios.get(`${BASE_URL}notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status === 'success') {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+      fetchUnreadCount();
+    }, [])
+  );
 
   // Edit Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -254,9 +278,23 @@ const Profile = () => {
 
             <Text style={styles.headerTitle}>My Account</Text>
 
-            <TouchableOpacity onPress={openEditModal} style={styles.editBtnHeader}>
-              <Icon name="account-edit-outline" size={24} color="#fff" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity
+                style={[styles.editBtnHeader, { marginRight: scale(10) }]}
+                onPress={() => navigation.navigate('Inbox')}
+              >
+                <Icon name="bell-outline" size={24} color="#fff" />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={openEditModal} style={styles.editBtnHeader}>
+                <Icon name="account-edit-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -471,7 +509,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
-    marginTop: 35,
+
   },
   headerTop: {
     flexDirection: 'row',
@@ -501,6 +539,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#e74c3c',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#248907',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: 'bold',
   },
 
   /* PROFILE CARD */

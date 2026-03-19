@@ -34,6 +34,22 @@ const RideBookingPage = () => {
   const [departing, setDeparting] = React.useState(new Date().toISOString().split('T')[0]);
   const [passengers, setPassengers] = React.useState('2');
   const [userData, setUserData] = React.useState(null);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
+      const response = await axios.get(`${BASE_URL}notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status === 'success') {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   // Autocomplete State
   const [fromSuggestions, setFromSuggestions] = React.useState([]);
@@ -166,6 +182,7 @@ const RideBookingPage = () => {
         }
       };
       getUserData();
+      fetchUnreadCount();
     }, [])
   );
 
@@ -262,6 +279,17 @@ const RideBookingPage = () => {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.headerContainer}>
             <Image source={require('../asset/Image/Ellipse.png')} style={styles.bgImage} />
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={() => navigation.navigate('Inbox')}
+            >
+              <Icon name="bell" size={28} color="#fff" />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
             <Text style={styles.title}>Pick your ride at lowest{'\n'}prices</Text>
           </View>
 
@@ -327,7 +355,15 @@ const RideBookingPage = () => {
                 <TouchableOpacity onPress={() => setOpen(true)} style={styles.smallInput}>
                   <Text style={{ marginTop: 12 }}>{departing}</Text>
                 </TouchableOpacity>
-                <DatePicker modal mode="date" open={open} date={date} onConfirm={(d) => { setOpen(false); setDate(d); setDeparting(d.toISOString().split('T')[0]); }} onCancel={() => setOpen(false)} />
+                <DatePicker
+                  modal
+                  mode="date"
+                  open={open}
+                  date={date}
+                  minimumDate={new Date()}
+                  onConfirm={(d) => { setOpen(false); setDate(d); setDeparting(d.toISOString().split('T')[0]); }}
+                  onCancel={() => setOpen(false)}
+                />
               </View>
               <View style={styles.smallBox}>
                 <Text style={styles.label}>Passengers</Text>
@@ -410,5 +446,36 @@ const styles = StyleSheet.create({
   suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: moderateScale(12), borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   suggestionText: { fontSize: responsiveFontSize(14), color: '#333', flex: 1 },
   locationBtn: { paddingHorizontal: scale(10), justifyContent: 'center', alignItems: 'center', height: verticalScale(45), marginBottom: verticalScale(10) },
+  bellButton: {
+    position: 'absolute',
+    top: verticalScale(10),
+    right: scale(20),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: moderateScale(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#e74c3c',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+    borderWidth: 1.5,
+    borderColor: '#fff'
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: 'bold'
+  }
 });
 

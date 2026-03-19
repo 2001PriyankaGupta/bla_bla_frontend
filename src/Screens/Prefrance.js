@@ -68,6 +68,15 @@ const SeatSelection = ({ route }) => {
   /* ---------------- STATES ---------------- */
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
+
+  React.useEffect(() => {
+    AsyncStorage.getItem('user_data').then(data => {
+      if (data) {
+        setLoggedInUserId(JSON.parse(data).id);
+      }
+    });
+  }, []);
 
   /* ---------------- BOOKING FUNCTION ---------------- */
   const processBooking = async (paymentMode) => {
@@ -81,7 +90,8 @@ const SeatSelection = ({ route }) => {
       const token = await AsyncStorage.getItem('access_token');
       const payload = {
         seats: selectedSeats.length,
-        special_requests: "" // Default empty
+        special_requests: "", // Default empty
+        payment_method: paymentMode
       };
 
       console.log('Original Payload:', payload);
@@ -172,15 +182,31 @@ const SeatSelection = ({ route }) => {
         setLoading(false);
       }
 
-    }).catch((error) => {
+    }).catch(async (error) => {
       // handle failure
-      console.error("Razorpay Error", error);
-      Alert.alert("Payment Failed", `Error: ${error.code} | ${error.description}`);
+      console.log("Razorpay Error", error);
+
+      // DELETE the failed booking so it doesn't stay in "My Rides"
+      try {
+        await axios.delete(`${BASE_URL}booking/${bookingId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        console.log("Failed booking deleted successfully");
+      } catch (delErr) {
+        console.log("Error deleting failed booking:", delErr);
+      }
+
+      Alert.alert("Payment Failed", "Your payment failed, so the booking was not created. Please try again.");
       setLoading(false);
     });
   };
 
   const confirmBooking = () => {
+    if (loggedInUserId && rideData && (rideData.driver_id == loggedInUserId || (rideData.car && rideData.car.user_id == loggedInUserId))) {
+      Alert.alert('Action Denied', 'You are the driver of this ride; you cannot book your own ride.');
+      return;
+    }
+
     Alert.alert(
       "Payment Method",
       `Total Amount: Rs ${totalPrice}\nSelect how you want to pay:`,
@@ -276,7 +302,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
 
   header: {

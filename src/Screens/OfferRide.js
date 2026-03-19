@@ -457,16 +457,22 @@ const OfferRide = () => {
                 <DatePicker modal
                   open={open}
                   date={date}
-                  onConfirm={(date) => {
+                  minimumDate={new Date()}
+                  onConfirm={(selectedDate) => {
+                    if (selectedDate < new Date()) {
+                      Alert.alert('Invalid Date', 'You cannot select a past date or time.');
+                      setOpen(false);
+                      return;
+                    }
                     setOpen(false)
-                    setDate(date)
+                    setDate(selectedDate)
                     // Format: YYYY-MM-DD HH:MM:SS
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                    const hours = String(selectedDate.getHours()).padStart(2, '0');
+                    const minutes = String(selectedDate.getMinutes()).padStart(2, '0');
+                    const seconds = String(selectedDate.getSeconds()).padStart(2, '0');
                     const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
                     setDateTime(formattedDate)
                   }}
@@ -591,7 +597,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(15),
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 35,
+
   },
   headerTitle: {
     flex: 1,

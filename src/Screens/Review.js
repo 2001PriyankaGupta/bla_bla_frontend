@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 6,
-    marginTop :35,
+
   },
   headerText: {
     fontSize: responsiveFontSize(20),

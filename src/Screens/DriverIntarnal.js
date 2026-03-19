@@ -457,6 +457,29 @@ const DriverIntarnal = () => {
             <TouchableOpacity
               style={[styles.btnGreen, { marginBottom: 12, backgroundColor: '#1fa000' }]}
               onPress={() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let tripDate = null;
+                if (trip_summary?.date) {
+                  // Normalize standard string formats or split explicitly if DD-MM-YYYY
+                  // Just rely on new Date() to handle YYYY-MM-DD
+                  const parts = trip_summary.date.split('-');
+                  if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+                    // Format DD-MM-YYYY
+                    tripDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                  } else {
+                    tripDate = new Date(trip_summary.date);
+                  }
+                  if (tripDate && !isNaN(tripDate.getTime())) {
+                    tripDate.setHours(0, 0, 0, 0);
+                    if (today < tripDate) {
+                      Alert.alert('Action Not Allowed', 'You cannot mark the ride as completed before the scheduled date.');
+                      return;
+                    }
+                  }
+                }
+
                 Alert.alert(
                   'Complete Ride',
                   'Are you sure you want to mark this ride as completed?',
@@ -536,7 +559,7 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(22),
     borderBottomLeftRadius: moderateScale(24),
     borderBottomRightRadius: moderateScale(24),
-    marginTop: 35,
+
   },
   headerRow: {
     flexDirection: 'row',

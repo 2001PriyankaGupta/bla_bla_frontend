@@ -288,24 +288,24 @@ const RideDetails = () => {
             {/* Header */}
             <View style={styles.headerView}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name="arrow-left" size={24} color="#000" />
+                    <Icon name="arrow-left" size={24} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerText}>{isEditing ? 'Edit Ride' : 'Ride Details'}</Text>
                 {!isEditing && (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{
-                            backgroundColor: rideData.status === 'active' ? '#e8f5e9' : '#ffebee',
-                            paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, marginRight: 10
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            paddingHorizontal: 8, borderRadius: 4, marginRight: 10
                         }}>
                             <Text style={{
-                                color: rideData.status === 'active' ? '#248907' : '#d32f2f',
+                                color: '#fff',
                                 fontWeight: '700', fontSize: 12
                             }}>
                                 {rideData.status ? rideData.status.toUpperCase() : 'ACTIVE'}
                             </Text>
                         </View>
                         <TouchableOpacity onPress={() => setIsEditing(true)}>
-                            <Icon name="pencil" size={24} color="#248907" />
+                            <Icon name="pencil" size={24} color="#fff" />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -545,10 +545,16 @@ const RideDetails = () => {
                                 modal
                                 open={open}
                                 date={date}
-                                onConfirm={(date) => {
+                                minimumDate={new Date()}
+                                onConfirm={(selectedDate) => {
+                                    if (selectedDate < new Date()) {
+                                        Alert.alert('Invalid Date', 'You cannot select a past date or time.');
+                                        setOpen(false);
+                                        return;
+                                    }
                                     setOpen(false)
-                                    setDate(date)
-                                    setDateTime(formatDateForApi(date))
+                                    setDate(selectedDate)
+                                    setDateTime(formatDateForApi(selectedDate))
                                 }}
                                 onCancel={() => {
                                     setOpen(false)
@@ -592,11 +598,13 @@ const styles = StyleSheet.create({
         paddingVertical: verticalScale(15),
         marginBottom: verticalScale(10),
         paddingHorizontal: scale(20),
+        backgroundColor: '#248907',
+        marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     headerText: {
         fontSize: responsiveFontSize(20),
         fontWeight: '600',
-        color: '#000',
+        color: '#fff',
         flex: 1,
         textAlign: 'center',
         marginRight: scale(24),

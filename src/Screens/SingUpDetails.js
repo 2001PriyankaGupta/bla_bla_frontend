@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -27,7 +28,17 @@ const CreateAccount = () => {
   const [password, setPassword] = useState(''); // Added state for password
   const [phone, setPhone] = useState(''); // Added state for phone
   const [profileImage, setProfileImage] = useState(null); // Added state for profile image
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorModalTitle, setErrorModalTitle] = useState('');
+  const [errorModalMessage, setErrorModalMessage] = useState('');
   const navigation = useNavigation();
+
+  // Custom alert display
+  const showError = (title, message) => {
+    setErrorModalTitle(title);
+    setErrorModalMessage(message);
+    setErrorModalVisible(true);
+  };
 
   // Function to handle image selection
   const handleImagePick = () => {
@@ -48,7 +59,22 @@ const CreateAccount = () => {
   // Function to handle registration
   const handleRegister = async () => {
     if (!email || !password || !phone) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Action Required', 'Please fill in all fields before continuing.');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(phone)) {
+      showError('Invalid Phone Number', 'Please enter exactly 10 digits for your phone number.');
+      return;
+    }
+
+    // Strong password validation
+    const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    if (!strongPasswordRegex.test(password)) {
+      showError(
+        'Weak Password',
+        'Your password is too weak. Please create a strong password of at least 8 characters with a mix of letters, numbers, and special symbols (like #, $, %, etc.).'
+      );
       return;
     }
 
@@ -90,7 +116,7 @@ const CreateAccount = () => {
           { text: 'OK', onPress: () => navigation.navigate('RideBookingPage') }
         ]);
       } else {
-        Alert.alert('Error', response.data.message || 'Registration failed. Please try again.');
+        showError('Registration Failed', response.data.message || 'We could not register your account. Please try again.');
       }
 
     } catch (error) {
@@ -99,13 +125,13 @@ const CreateAccount = () => {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         console.error('Error Data:', error.response.data);
-        Alert.alert('Error', error.response.data.message || 'Registration failed.');
+        showError('Registration Failed', error.response.data.message || 'Something went wrong during registration.');
       } else if (error.request) {
         // The request was made but no response was received
-        Alert.alert('Error', 'No response from server. Check your internet connection.');
+        showError('Network Error', 'No response from server. Check your internet connection.');
       } else {
         // Something happened in setting up the request that triggered an Error
-        Alert.alert('Error', 'An error occurred. Please try again.');
+        showError('Unexpected Error', 'An error occurred. Please try again later.');
       }
     }
   };
@@ -163,7 +189,7 @@ const CreateAccount = () => {
                 value={password}
                 onChangeText={setPassword}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 10 }}>
                 <Icon
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={22}
@@ -185,6 +211,7 @@ const CreateAccount = () => {
                 placeholder="Phone Number"
                 placeholderTextColor="#777"
                 keyboardType="numeric"
+                maxLength={10}
                 style={styles.input}
                 value={phone}
                 onChangeText={setPhone}
@@ -206,6 +233,30 @@ const CreateAccount = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* CUSTOM MODAL FOR ALERTS */}
+      <Modal
+        visible={errorModalVisible}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon name="alert-circle-outline" size={50} color="#e53935" />
+              <Text style={styles.modalTitle}>{errorModalTitle}</Text>
+            </View>
+            <Text style={styles.modalText}>{errorModalMessage}</Text>
+            <TouchableOpacity
+              style={styles.modalBtn}
+              onPress={() => setErrorModalVisible(false)}
+            >
+              <Text style={styles.modalBtnText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -315,6 +366,58 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(18),
     fontSize: responsiveFontSize(17),
     color: '#000',
+  },
+
+  /* MODAL STYLES */
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: responsiveFontSize(22),
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: responsiveFontSize(15),
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  modalBtn: {
+    backgroundColor: '#248907',
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(40),
+    borderRadius: moderateScale(15),
+    width: '100%',
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontSize: responsiveFontSize(18),
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 
