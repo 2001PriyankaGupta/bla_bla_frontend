@@ -1,16 +1,18 @@
 import React from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   ScrollView,
+  Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const RideList = () => {
+  const insets = useSafeAreaInsets();
   const rides = [
     { id: 1, time: '14:15 - 10:50', route: 'Dehradun → Noida', seats: 3, price: 1250 },
     { id: 2, time: '14:15 - 10:50', route: 'Dehradun → Noida', seats: 2, price: 1250 },
@@ -18,11 +20,11 @@ const RideList = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor="#248907" />
 
       {/* Header with search and filter */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 10 : 0) }]}>
         <View style={styles.locationBox}>
           <Text style={styles.locationText}>Dehradun, Uttarakhand → Noida, UP</Text>
           <Icon name="bell-outline" size={22} color="#000" style={{ marginLeft: 10 }} />

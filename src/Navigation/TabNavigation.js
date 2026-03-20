@@ -1,15 +1,18 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { Platform } from "react-native";
 import Home from "../Screens/Home";
 import Publish from "../Screens/Publish";
 import YourRides from "../Screens/YourRides";
 import Profile from "../Screens/Profile";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigation({ route }) {
+  const insets = useSafeAreaInsets();
   // Screens where ONLY 2 tabs should show
   const twoTabScreens = ["RideBookingPage"];
 
@@ -20,7 +23,12 @@ export default function TabNavigation({ route }) {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#248907", height: 70 },
+        tabBarStyle: {
+          backgroundColor: "#248907",
+          height: Platform.OS === 'ios' ? 70 + insets.bottom : 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 5
+        },
         tabBarActiveTintColor: "#fff",
         tabBarInactiveTintColor: "#fff",
       }}

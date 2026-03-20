@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Payments = () => {
   const [activeTab, setActiveTab] = useState('Paid');
+  const insets = useSafeAreaInsets();
 
   const transactions = {
     Paid: [
@@ -32,7 +33,7 @@ const Payments = () => {
       <StatusBar barStyle="light-content" backgroundColor="#248907" translucent={false} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: verticalScale(30) }}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + verticalScale(15) }]}>
           <View style={styles.headerRow}>
             <TouchableOpacity>
               <Icon name="arrow-left" size={24} color="#fff" />
@@ -164,7 +165,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: moderateScale(20),
     paddingHorizontal: scale(20),
     paddingBottom: verticalScale(25),
-    paddingTop: verticalScale(15),
   },
   headerRow: {
     flexDirection: 'row',
@@ -309,4 +309,3 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize(13),
   },
 });
-

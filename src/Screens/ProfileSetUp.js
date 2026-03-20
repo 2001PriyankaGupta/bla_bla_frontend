@@ -10,7 +10,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const ProfileSetup = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
@@ -32,7 +33,7 @@ const ProfileSetup = () => {
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
           {/* Header */}
-          <View style={styles.header}>
+          <View style={[styles.header, { marginTop: insets.top }]}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Icon name="arrow-left" size={24} color="#000" />
             </TouchableOpacity>
@@ -146,7 +147,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: verticalScale(10),
     paddingVertical: verticalScale(10),
   },
 
@@ -278,4 +278,3 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 });
-

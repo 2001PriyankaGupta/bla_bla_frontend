@@ -33,6 +33,7 @@ import AddReviewScreen from '../Screens/AddReviewScreen';
 import ForgotPassword from '../Screens/ForgotPassword';
 import SupportTickets from '../Screens/SupportTickets';
 import TicketChat from '../Screens/TicketChat';
+import OtpScreen from '../Screens/OtpScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -91,6 +92,11 @@ const RootNavigation = () => {
         <Stack.Screen
           name="LoginDetails"
           component={LoginDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="OtpScreen"
+          component={OtpScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

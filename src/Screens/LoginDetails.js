@@ -9,9 +9,9 @@ import {
   Image,
   ScrollView,
   StatusBar,
-  Alert
+  Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
@@ -26,20 +26,47 @@ const LoginDetails = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [modalState, setModalState] = React.useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'error',
+    onConfirm: null,
+  });
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+
+  const showModal = (title, message, type = 'error', onConfirm = null) => {
+    setModalState({ visible: true, title, message, type, onConfirm });
+  };
+
+  const handleModalConfirm = () => {
+    setModalState(prev => ({ ...prev, visible: false }));
+    if (modalState.onConfirm) {
+      modalState.onConfirm();
+    }
+  };
 
   const signInWithGoogle = async () => {
     try {
       try {
         await GoogleSignin.signOut();
-      } catch (e) { }
+      } catch (e) {
+        if (e.response && e.response.status === 401) {
+          await AsyncStorage.removeItem('access_token');
+          await AsyncStorage.removeItem('user_data');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
+      }
 
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken || userInfo.idToken;
 
       if (!idToken) {
-        Alert.alert('Error', 'Could not retrieve ID Token');
+        showModal('Error', 'Could not retrieve ID Token');
         return;
       }
 
@@ -55,26 +82,33 @@ const LoginDetails = () => {
           if (user.id) await AsyncStorage.setItem('user_id', user.id.toString());
         }
 
-        Alert.alert('Success', 'Login Successful!', [
-          { text: 'OK', onPress: () => navigation.navigate('RideBookingPage') }
-        ]);
+        showModal('Success', 'Login Successful!', 'success', () => navigation.navigate('RideBookingPage'));
       } else {
-        Alert.alert('Error', response.data.message || 'Login failed');
+        showModal('Error', response.data.message || 'Login failed');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         console.error('Google Sign-In Error:', error);
         const errorMsg = error.response?.data?.message || error.message || 'Something went wrong';
-        Alert.alert('Error', errorMsg);
+        showModal('Error', errorMsg);
       }
     }
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showModal('Error', 'Please fill in all fields');
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       console.log('Sending login request to:', `${BASE_URL}auth/login`);
@@ -85,7 +119,9 @@ const LoginDetails = () => {
 
       console.log('Login Response:', response.data);
 
-      if (response.data.status === "true" || response.status === 200 || response.status === 201) {
+      if (response.data.status === "pending_verification") {
+        showModal('Verify Email', response.data.message || 'OTP sent to your email.', 'info', () => navigation.navigate('OtpScreen', { email: response.data.email || email }));
+      } else if (response.data.status === "true" || response.status === 200 || response.status === 201) {
         const { access_token, user } = response.data;
         if (access_token) {
           await AsyncStorage.setItem('access_token', access_token);
@@ -106,22 +142,29 @@ const LoginDetails = () => {
           }
         }
 
-        Alert.alert('Success', 'Login Successful!', [
-          { text: 'OK', onPress: () => navigation.navigate('RideBookingPage') }
-        ]);
+        showModal('Success', 'Login Successful!', 'success', () => navigation.navigate('RideBookingPage'));
       } else {
-        Alert.alert('Error', response.data.message || 'Login failed. Please try again.');
+        showModal('Error', response.data.error || response.data.message || 'Login failed. Please try again.');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Login Error:', error);
       if (error.response) {
         console.error('Error Data:', error.response.data);
-        Alert.alert('Error', error.response.data.message || 'Login failed.');
+        showModal('Error', error.response.data.error || error.response.data.message || 'Login failed.');
       } else if (error.request) {
-        Alert.alert('Error', 'No response from server. Check your internet connection.');
+        showModal('Error', 'No response from server. Check your internet connection.');
       } else {
-        Alert.alert('Error', 'An error occurred. Please try again.');
+        showModal('Error', 'An error occurred. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -132,7 +175,7 @@ const LoginDetails = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1, width: '100%' }}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: scale(30) }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: scale(30), paddingTop: insets.top }} showsVerticalScrollIndicator={false}>
           <View style={{ alignItems: 'center', width: '100%' }}>
             {/* Email Input */}
             <View style={styles.inputBox}>
@@ -180,8 +223,12 @@ const LoginDetails = () => {
             </View>
 
             {/* Next Button */}
-            <TouchableOpacity style={styles.nextButton} onPress={handleLogin}>
-              <Text style={styles.nextText}>Login</Text>
+            <TouchableOpacity
+              style={[styles.nextButton, isSubmitting && { opacity: 0.7 }]}
+              onPress={handleLogin}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.nextText}>{isSubmitting ? 'Submitting...' : 'Login'}</Text>
             </TouchableOpacity>
 
             <View style={styles.orRow}>
@@ -206,6 +253,34 @@ const LoginDetails = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* CUSTOM MODAL FOR ALERTS */}
+      <Modal
+        visible={modalState.visible}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalBg}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon
+                name={modalState.type === 'error' ? 'alert-circle-outline' : modalState.type === 'success' ? 'check-circle-outline' : 'email-fast-outline'}
+                size={50}
+                color={modalState.type === 'error' ? '#e53935' : '#248907'}
+              />
+              <Text style={styles.modalTitle}>{modalState.title}</Text>
+            </View>
+            <Text style={styles.modalText}>{modalState.message}</Text>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: modalState.type === 'error' ? '#e53935' : '#248907' }]}
+              onPress={handleModalConfirm}
+            >
+              <Text style={styles.modalBtnText}>{modalState.type === 'error' ? 'Got it!' : 'Continue'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -296,5 +371,54 @@ const styles = StyleSheet.create({
     width: scale(30),
     height: scale(30),
     resizeMode: 'contain',
+  },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: responsiveFontSize(22),
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: responsiveFontSize(15),
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  modalBtn: {
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(40),
+    borderRadius: moderateScale(15),
+    width: '100%',
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontSize: responsiveFontSize(18),
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

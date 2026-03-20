@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState, useEffect } from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -12,11 +13,12 @@ import {
   Platform,
   ActivityIndicator,
   LayoutAnimation,
-  UIManager,
+  UIManager
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { BASE_URL } from '../config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -34,6 +36,7 @@ const STATIC_DATA = {
 
 const HelpSupport = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +53,13 @@ const HelpSupport = () => {
           setFilteredFaqs(response.data.data);
         }
       } catch (error) {
+        if (error.response && error.response.status === 401) {
+          await AsyncStorage.removeItem('access_token');
+          await AsyncStorage.removeItem('user_data');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
+
         console.error('Error fetching FAQs:', error);
       } finally {
         if (isMounted) setLoading(false);
@@ -82,11 +92,11 @@ const HelpSupport = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={26} color="#fff" />
         </TouchableOpacity>
@@ -217,7 +227,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
   },
   header: {
     backgroundColor: '#1fa000',

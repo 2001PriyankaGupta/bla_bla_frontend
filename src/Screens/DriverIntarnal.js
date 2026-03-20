@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import {
   View,
   Text,
@@ -19,11 +20,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, IMG_URL } from '../config/config';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DriverIntarnal = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   const { tripId, bookingId } = route.params || {};
 
   const [tripData, setTripData] = useState(null);
@@ -56,6 +58,13 @@ const DriverIntarnal = () => {
         Alert.alert('Error', response.data.message || response.data.error || 'Failed to update status');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Update Status Error:', error);
       const serverMsg = error.response?.data?.message || error.response?.data?.error || error.response?.data?.errors;
       const finalMsg = typeof serverMsg === 'object' ? JSON.stringify(serverMsg) : serverMsg;
@@ -96,6 +105,13 @@ const DriverIntarnal = () => {
         Alert.alert('Error', response.data.message || 'Failed to load details');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Fetch Error:', error);
     } finally {
       setLoading(false);
@@ -112,6 +128,13 @@ const DriverIntarnal = () => {
         message: `Ride: ${tripData?.trip_summary?.pickup_point} → ${tripData?.trip_summary?.drop_point}\nDate: ${tripData?.trip_summary?.date} | Time: ${tripData?.trip_summary?.departure_time}`,
       });
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       Alert.alert(error.message);
     }
   };
@@ -181,7 +204,7 @@ const DriverIntarnal = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ══ HEADER ══════════════════════════════════════════════ */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + verticalScale(16) }]}>
 
           {/* Back + Title */}
           <View style={styles.headerRow}>
@@ -555,7 +578,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#248907',
     paddingHorizontal: scale(18),
-    paddingTop: verticalScale(16),
     paddingBottom: verticalScale(22),
     borderBottomLeftRadius: moderateScale(24),
     borderBottomRightRadius: moderateScale(24),

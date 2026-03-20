@@ -14,7 +14,7 @@ import {
   RefreshControl,
   KeyboardAvoidingView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -26,6 +26,7 @@ import { scale, verticalScale, moderateScale, responsiveFontSize } from '../util
 
 const AddYourCar = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   // Tabs: 'list' | 'add'
   const [activeTab, setActiveTab] = useState('list');
@@ -39,11 +40,14 @@ const AddYourCar = () => {
   const [carYear, setCarYear] = useState('');
   const [carColor, setCarColor] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
+  const [rcNumber, setRcNumber] = useState('');
 
   // State for photos
   const [carPhoto, setCarPhoto] = useState(null);
   const [licenseFront, setLicenseFront] = useState(null);
   const [licenseBack, setLicenseBack] = useState(null);
+  const [rcFront, setRcFront] = useState(null);
+  const [rcBack, setRcBack] = useState(null);
 
   const [validatingImage, setValidatingImage] = useState(false);
 
@@ -77,6 +81,13 @@ const AddYourCar = () => {
         setMyCars([]); // Handle empty or error gracefully
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Fetch Cars Error:', error);
       // Alert.alert('Error', 'Failed to fetch your cars.');
     } finally {
@@ -127,12 +138,12 @@ const AddYourCar = () => {
       if (isOk) {
         setImageCallback(image);
       } else {
-        Alert.alert(
-          "Invalid Photo",
-          type === 'car'
-            ? "Invalid photo selected. Please upload a clear photo of your car."
-            : "Invalid photo selected. Please upload a clear photo of your Driving License/ID."
-        );
+        let msg = type === 'car'
+          ? "Invalid photo selected. Please upload a clear photo of your car."
+          : type === 'rc'
+            ? "Invalid photo selected. Please upload a clear photo of your Registration Certificate (RC)."
+            : "Invalid photo selected. Please upload a clear photo of your Driving License/ID.";
+        Alert.alert("Invalid Photo", msg);
       }
     } catch (err) {
       console.warn('Handling Error: ', err);
@@ -164,14 +175,25 @@ const AddYourCar = () => {
 
       if (type === 'car') {
         const carKeywords = ['car', 'vehicle', 'tire', 'land vehicle', 'transport', 'coupe', 'sedan', 'truck', 'sports car', 'family car', 'compact car', 'wheel', 'motor vehicle'];
-        const isCar = labels.some(label => carKeywords.includes(label.description.toLowerCase()));
-        return isCar;
+        return labels.some(label => carKeywords.includes(label.description.toLowerCase()));
+      } else if (type === 'license') {
+        const dlKeywords = ['identity document', 'driver', 'driving license', 'id card', 'passport', 'document', 'license', 'card', 'text'];
+        return labels.some(label => dlKeywords.some(kw => label.description.toLowerCase().includes(kw)));
+      } else if (type === 'rc') {
+        const rcKeywords = ['registration certificate', 'vehicle registration', 'document', 'certificate', 'paper', 'rc', 'text', 'card'];
+        return labels.some(label => rcKeywords.some(kw => label.description.toLowerCase().includes(kw)));
       }
 
-      // For license, we just check if it's generally identifiable as a document or card
       return labels.length > 0;
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.warn('Vision API call failed:', error.response ? error.response.data : error.message);
 
       if (error.response?.status === 403) {
@@ -185,8 +207,8 @@ const AddYourCar = () => {
 
   // --- Form Logic ---
   const validateStep1 = () => {
-    if (!carMake || !carModel || !carYear || !carColor || !licensePlate || !carPhoto) {
-      Alert.alert('Error', 'Please fill all car details and add a car photo.');
+    if (!carMake || !carModel || !carYear || !carColor || !licensePlate || !rcNumber || !carPhoto) {
+      Alert.alert('Error', 'Please fill all car details including RC number, and add a car photo.');
       return false;
     }
 
@@ -201,6 +223,17 @@ const AddYourCar = () => {
       Alert.alert('Invalid License Plate', 'Registration number must only contain letters and numbers.');
       return false;
     }
+
+    const rcClean = rcNumber.replace(/\s+/g, '').toUpperCase();
+    if (rcClean.length < 9 || rcClean.length > 11) {
+      Alert.alert('Invalid RC Number', 'RC number must be 9 to 11 characters long.');
+      return false;
+    }
+    if (!alphaNumericRegex.test(rcClean)) {
+      Alert.alert('Invalid RC Number', 'RC number must only contain letters and numbers.');
+      return false;
+    }
+
     return true;
   };
 
@@ -211,8 +244,8 @@ const AddYourCar = () => {
   };
 
   const handleSubmit = async () => {
-    if (!licenseFront || !licenseBack) {
-      Alert.alert('Error', 'Please upload both front and back photos of your driving license.');
+    if (!licenseFront || !licenseBack || !rcFront || !rcBack) {
+      Alert.alert('Error', 'Please upload front and back photos for both your driving license and RC.');
       return;
     }
 
@@ -223,10 +256,13 @@ const AddYourCar = () => {
     formData.append('car_year', carYear);
     formData.append('car_color', carColor);
     formData.append('licence_plate', licensePlate);
+    formData.append('rc_number', rcNumber);
 
     if (carPhoto) formData.append('car_photo', { uri: carPhoto.path, type: carPhoto.mime, name: carPhoto.path.split('/').pop() });
     if (licenseFront) formData.append('driver_license_front', { uri: licenseFront.path, type: licenseFront.mime, name: licenseFront.path.split('/').pop() });
     if (licenseBack) formData.append('driver_license_back', { uri: licenseBack.path, type: licenseBack.mime, name: licenseBack.path.split('/').pop() });
+    if (rcFront) formData.append('rc_front_image', { uri: rcFront.path, type: rcFront.mime, name: rcFront.path.split('/').pop() });
+    if (rcBack) formData.append('rc_back_image', { uri: rcBack.path, type: rcBack.mime, name: rcBack.path.split('/').pop() });
 
     try {
       const token = await AsyncStorage.getItem('access_token');
@@ -238,8 +274,8 @@ const AddYourCar = () => {
       if (response.data.status === "true" || response.status === 200 || response.status === 201) {
         Alert.alert('Success', 'Car details added successfully!');
         // Reset Form
-        setCarMake(''); setCarModel(''); setCarYear(''); setCarColor(''); setLicensePlate('');
-        setCarPhoto(null); setLicenseFront(null); setLicenseBack(null);
+        setCarMake(''); setCarModel(''); setCarYear(''); setCarColor(''); setLicensePlate(''); setRcNumber('');
+        setCarPhoto(null); setLicenseFront(null); setLicenseBack(null); setRcFront(null); setRcBack(null);
         setStep(1);
         // Switch back to list tab
         setActiveTab('list');
@@ -247,6 +283,13 @@ const AddYourCar = () => {
         Alert.alert('Error', response.data.message || 'Failed to add car details.');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Add Car Error:', error);
       Alert.alert('Error', 'An error occurred while adding car details.');
     } finally {
@@ -293,7 +336,7 @@ const AddYourCar = () => {
       >
 
         {/* Header */}
-        <View style={styles.headerView}>
+        <View style={[styles.headerView, { paddingTop: insets.top + verticalScale(10) }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
@@ -369,6 +412,15 @@ const AddYourCar = () => {
                       autoCapitalize="characters"
                       maxLength={12}
                     />
+                    <TextInput
+                      placeholder="RC Number"
+                      placeholderTextColor="#777"
+                      style={styles.input}
+                      value={rcNumber}
+                      onChangeText={setRcNumber}
+                      autoCapitalize="characters"
+                      maxLength={15}
+                    />
                   </View>
 
                   <Text style={styles.sectionTitle}>Add photo of your car</Text>
@@ -412,6 +464,30 @@ const AddYourCar = () => {
                       <Text style={styles.uploadButtonText}>{licenseBack ? 'Change Photo' : 'Upload Back'}</Text>
                     </TouchableOpacity>
                   </View>
+
+                  <Text style={styles.sectionTitle}>RC (Registration Certificate) Front</Text>
+                  <View style={styles.uploadBox}>
+                    {rcFront ? (
+                      <Image source={{ uri: rcFront.path }} style={styles.previewImage} />
+                    ) : (
+                      <Icon name="file-document-outline" size={50} color="#ccc" />
+                    )}
+                    <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setRcFront, 'rc')}>
+                      <Text style={styles.uploadButtonText}>{rcFront ? 'Change Photo' : 'Upload RC Front'}</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.sectionTitle}>RC (Registration Certificate) Back</Text>
+                  <View style={styles.uploadBox}>
+                    {rcBack ? (
+                      <Image source={{ uri: rcBack.path }} style={styles.previewImage} />
+                    ) : (
+                      <Icon name="file-document-outline" size={50} color="#ccc" />
+                    )}
+                    <TouchableOpacity style={styles.uploadButton} onPress={() => requestImageSelection(setRcBack, 'rc')}>
+                      <Text style={styles.uploadButtonText}>{rcBack ? 'Change Photo' : 'Upload RC Back'}</Text>
+                    </TouchableOpacity>
+                  </View>
                 </>
               )}
               {/* Moved Buttons Inside ScrollView so they don't fight native keyboard layout */}
@@ -444,10 +520,9 @@ const styles = StyleSheet.create({
   headerView: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingBottom: 15,
     marginBottom: 10,
     backgroundColor: '#248907',
-    marginTop: 28,
     paddingHorizontal: 20,
   },
   headerText: {

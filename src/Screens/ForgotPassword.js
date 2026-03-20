@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import {
     View,
     Text,
-    SafeAreaView,
     StyleSheet,
     TouchableOpacity,
     TextInput,
@@ -10,6 +10,7 @@ import {
     Alert,
     StatusBar
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
@@ -17,6 +18,7 @@ import { BASE_URL } from '../config/config';
 
 const ForgotPassword = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -44,6 +46,13 @@ const ForgotPassword = () => {
                 Alert.alert("Error", response.data.message || "Something went wrong");
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Forgot Password Error:", error);
             const msg = error.response?.data?.message || "Failed to send code";
             Alert.alert("Error", msg);
@@ -68,6 +77,13 @@ const ForgotPassword = () => {
                 Alert.alert("Error", response.data.message || "Invalid code");
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Verify Code Error:", error);
             Alert.alert("Error", "Invalid code");
         } finally {
@@ -102,6 +118,13 @@ const ForgotPassword = () => {
                 Alert.alert("Error", response.data.message || "Failed to reset password");
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Reset Password Error:", error);
             Alert.alert("Error", "Failed to reset password");
         } finally {
@@ -112,7 +135,7 @@ const ForgotPassword = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" translucent={false} />
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -197,7 +220,6 @@ const ForgotPassword = () => {
                                 secureTextEntry
                             />
                         </View>
-
                         <TouchableOpacity style={styles.button} onPress={handleResetPassword} disabled={loading}>
                             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
                         </TouchableOpacity>
@@ -220,12 +242,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#248907', // Green Header
-        paddingTop: 50,
         paddingBottom: 20,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
         marginBottom: 20,
-        marginTop: 35,
     },
     headerTitle: {
         fontSize: 20,

@@ -1,9 +1,10 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     View,
     Text,
-    SafeAreaView,
     FlatList,
     StyleSheet,
     StatusBar,
@@ -12,7 +13,7 @@ import {
     Platform,
     TextInput,
     KeyboardAvoidingView,
-    Keyboard,
+    Keyboard
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
@@ -21,6 +22,7 @@ import { BASE_URL } from '../config/config';
 
 const TicketChat = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const route = useRoute();
     const { ticketId, ticketTitle } = route.params;
 
@@ -48,6 +50,13 @@ const TicketChat = () => {
                 setReplies(response.data.data.replies || []);
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Error fetching ticket details:', error);
         } finally {
             setLoading(false);
@@ -92,6 +101,13 @@ const TicketChat = () => {
                 fetchTicketDetails();
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Error sending reply:', error);
             // Remove optimistic message on error? Maybe just show error
         } finally {
@@ -124,11 +140,11 @@ const TicketChat = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
             <StatusBar barStyle="dark-content" backgroundColor="#1fa000" />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 10 : 0) }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={26} color="#fff" />
                 </TouchableOpacity>
@@ -164,7 +180,7 @@ const TicketChat = () => {
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
                     >
-                        <View style={styles.inputContainer}>
+                        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                             <TextInput
                                 style={styles.input}
                                 placeholder="Type your message..."
@@ -173,7 +189,7 @@ const TicketChat = () => {
                                 multiline
                             />
                             <TouchableOpacity
-                                style={[styles.sendBtn, !message.trim() && { opacity: 0.5 }]}
+                                style={styles.sendBtn}
                                 onPress={handleSendReply}
                                 disabled={!message.trim() || sending}
                             >
@@ -197,14 +213,12 @@ const styles = StyleSheet.create({
     safe: {
         flex: 1,
         backgroundColor: '#f0f2f5',
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
     },
     header: {
         backgroundColor: '#1fa000',
         padding: 15,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 10,
     },
     headerTitleContainer: {
         flex: 1,

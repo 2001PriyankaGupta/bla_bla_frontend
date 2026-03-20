@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { IMG_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import axios from 'axios';
@@ -23,6 +23,7 @@ import axios from 'axios';
 const MyRidedetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
 
   // ─── All data passed from DriverIntarnal ─────────────────────
   const {
@@ -148,10 +149,10 @@ const MyRidedetails = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['right', 'left', 'bottom']}>
-      <StatusBar barStyle="dark-content" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#248907" translucent={false} />
 
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(14) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Icon name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
@@ -224,7 +225,7 @@ const MyRidedetails = () => {
           <View style={{ flex: 1 }}>
             <Text style={styles.personName}>{targetName}</Text>
             <Text style={styles.subLabel}>
-              {contactLabel || (isIAmDriver ? 'Passenger' : 'Driver')} · {trip_summary?.departure_time || ''}
+              {contactLabel || (isIAmDriver ? 'Passenger' : 'Driver')} · {trip_summary?.date || ''} {trip_summary?.departure_time || ''}
             </Text>
             {!isIAmDriver && (
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
@@ -293,8 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: scale(15),
-    paddingVertical: verticalScale(14),
-    marginTop: 35,
+    paddingBottom: verticalScale(14),
   },
   backBtn: { padding: scale(4) },
   headerTitle: {
@@ -434,4 +434,3 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize(15)
   },
 });
-

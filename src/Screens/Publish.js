@@ -1,5 +1,7 @@
+import { formatDateTime } from '../utils/DateUtils';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useCallback } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -9,6 +11,7 @@ import { BASE_URL } from '../config/config';
 
 const Publish = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [activeRides, setActiveRides] = useState([]);
   const [earnings, setEarnings] = useState({ today: 0, week: 0 });
   const [loading, setLoading] = useState(true);
@@ -17,6 +20,11 @@ const Publish = () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       const response = await axios.get(`${BASE_URL}active-rides`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -32,6 +40,11 @@ const Publish = () => {
       }
     } catch (error) {
       console.error('Error fetching dashboard rides:', error);
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+      }
     } finally {
       setLoading(false);
     }
@@ -48,12 +61,14 @@ const Publish = () => {
       <StatusBar barStyle="dark-content" />
 
       {/* Green Header Area */}
-      <View style={styles.headerWrapper}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
+        <TouchableOpacity style={[styles.backBtn, { top: insets.top + 10 }]} onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Dashboard</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+        </View>
       </View>
 
       {/* Offer Ride Button */}
@@ -92,7 +107,7 @@ const Publish = () => {
                     {ride.from} {'->'} {ride.to}
                   </Text>
                   <Text style={[styles.rideDetails, { color: '#248907', fontWeight: '600' }]}>
-                    {new Date(ride.date_time).toLocaleString()}
+                    {formatDateTime(ride.date_time)}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -133,21 +148,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     backgroundColor: '#248907',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: 'row',
   },
 
   backBtn: {
     position: 'absolute',
     left: 15,
-    top: 40,
+    zIndex: 10,
   },
 
   headerTitle: {
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginTop: -30,
   },
 
   offerContainer: {

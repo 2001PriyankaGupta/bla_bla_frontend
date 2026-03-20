@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   StatusBar,
   Image,
   Platform,
   Modal,
   TextInput,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -46,7 +48,8 @@ const renderSeat = (item, selectedSeats, handleSelectSeat) => {
 
 const SeatSelection = ({ route }) => {
   const navigation = useNavigation();
-  const { rideData } = route.params || {};
+  const insets = useSafeAreaInsets();
+  const { rideData, searchPickup, searchDrop } = route.params || {};
 
   /* ---------------- SEAT ARRAY ---------------- */
   // Use rideData seats if available, else default to 5
@@ -69,6 +72,8 @@ const SeatSelection = ({ route }) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [dropType, setDropType] = useState('main'); // 'main' or 'stop'
+  const [selectedStopId, setSelectedStopId] = useState(null);
 
   React.useEffect(() => {
     AsyncStorage.getItem('user_data').then(data => {
@@ -88,10 +93,22 @@ const SeatSelection = ({ route }) => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('access_token');
+
+      // Determine final drop point
+      let finalDrop = searchDrop || rideData.drop_point;
+      if (dropType === 'stop' && selectedStopId) {
+        const stop = rideData.stop_points.find(s => s.id === selectedStopId);
+        if (stop) finalDrop = stop.city_name;
+      }
+
       const payload = {
         seats: selectedSeats.length,
         special_requests: "", // Default empty
-        payment_method: paymentMode
+        payment_method: paymentMode,
+        stop_point_id: dropType === 'stop' ? selectedStopId : null,
+        drop_point_type: dropType,
+        pickup_point: searchPickup || rideData.pickup_point,
+        drop_point: finalDrop
       };
 
       console.log('Original Payload:', payload);
@@ -125,6 +142,13 @@ const SeatSelection = ({ route }) => {
       }
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error("Booking Error:", error);
       if (error.response) {
         Alert.alert("Error", error.response.data.message || "Booking failed.");
@@ -230,15 +254,20 @@ const SeatSelection = ({ route }) => {
   };
 
   /* ---------------- PRICE CALCULATION ---------------- */
-  const selectedSeatObjects = seats.filter(s => selectedSeats.includes(s.id));
-  const totalPrice = selectedSeatObjects.reduce((sum, s) => sum + s.price, 0);
+  let currentPricePerSeat = pricePerSeat;
+  if (dropType === 'stop' && selectedStopId) {
+    const stop = rideData.stop_points.find(s => s.id === selectedStopId);
+    if (stop) currentPricePerSeat = parseFloat(stop.price_from_pickup);
+  }
+
+  const totalPrice = selectedSeats.length * currentPricePerSeat;
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#248907" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.locationBox}>
           <Text style={styles.locationText}>
             {rideData ? `${rideData.from || rideData.pickup_point || ''} → ${rideData.to || rideData.drop_point || ''}` : 'Bus Booking'}
@@ -263,6 +292,37 @@ const SeatSelection = ({ route }) => {
             <Icon name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.title}>Book Your Preferred Seat</Text>
+        </View>
+
+        {/* ── Drop Point Selection ── */}
+        <View style={styles.destinationCard}>
+          <Text style={styles.destLabel}>Select Drop Point:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
+            {/* Main Destination */}
+            <TouchableOpacity
+              style={[styles.destPill, dropType === 'main' && styles.destPillActive]}
+              onPress={() => { setDropType('main'); setSelectedStopId(null); }}
+            >
+              <Icon name="map-marker" size={16} color={dropType === 'main' ? '#fff' : '#248907'} />
+              <Text style={[styles.destText, dropType === 'main' && { color: '#fff' }]}>
+                {rideData?.drop_point?.split(',')[0]} (₹{pricePerSeat})
+              </Text>
+            </TouchableOpacity>
+
+            {/* Stop Points */}
+            {rideData?.stop_points?.map((stop) => (
+              <TouchableOpacity
+                key={stop.id}
+                style={[styles.destPill, dropType === 'stop' && selectedStopId === stop.id && styles.destPillActive]}
+                onPress={() => { setDropType('stop'); setSelectedStopId(stop.id); }}
+              >
+                <Icon name="map-marker-outline" size={16} color={selectedStopId === stop.id ? '#fff' : '#555'} />
+                <Text style={[styles.destText, selectedStopId === stop.id && { color: '#fff' }]}>
+                  {stop.city_name?.split(',')[0]} (₹{stop.price_from_pickup})
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {/* SEAT AREA - Dynamic Grid */}
@@ -478,6 +538,42 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  // Stop Point UI Styles
+  destinationCard: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  destLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 5,
+  },
+  destPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  destPillActive: {
+    backgroundColor: '#248907',
+    borderColor: '#248907',
+  },
+  destText: {
+    fontSize: 13,
+    color: '#555',
+    marginLeft: 5,
+    fontWeight: '600',
+  },
   closeModal: {
     marginTop: 10,
     alignItems: 'center',

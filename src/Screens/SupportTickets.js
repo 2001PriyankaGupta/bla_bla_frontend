@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState, useEffect, useCallback } from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     View,
     Text,
-    SafeAreaView,
     FlatList,
     ScrollView,
     StyleSheet,
@@ -14,7 +15,7 @@ import {
     RefreshControl,
     Modal,
     TextInput,
-    Alert,
+    Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
@@ -23,6 +24,7 @@ import { BASE_URL } from '../config/config';
 
 const SupportTickets = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -43,6 +45,13 @@ const SupportTickets = () => {
                 setTickets(response.data.data);
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Error fetching tickets:', error);
         } finally {
             setLoading(false);
@@ -84,6 +93,13 @@ const SupportTickets = () => {
                 fetchTickets();
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Error creating ticket:', error);
             Alert.alert('Error', 'Failed to create ticket');
         } finally {
@@ -127,7 +143,7 @@ const SupportTickets = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#1fa000" />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={26} color="#fff" />
                 </TouchableOpacity>
@@ -224,14 +240,12 @@ const styles = StyleSheet.create({
     safe: {
         flex: 1,
         backgroundColor: '#f8f9fa',
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 5 : 0,
     },
     header: {
         backgroundColor: '#1fa000',
         padding: 15,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 10,
     },
     headerTitle: {
         flex: 1,

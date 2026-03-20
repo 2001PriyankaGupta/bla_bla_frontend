@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState } from 'react';
 import {
   View,
@@ -15,7 +16,7 @@ import {
   Alert,
   KeyboardAvoidingView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ImagePicker from 'react-native-image-crop-picker';
 
@@ -28,6 +29,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [switchRole, setSwitchRole] = useState(false);
   const [userData, setUserData] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -43,6 +45,13 @@ const Profile = () => {
         setUnreadCount(response.data.count);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error fetching unread count:', error);
     }
   };
@@ -100,6 +109,13 @@ const Profile = () => {
       }
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Failed to load user data:', error);
       // Fallback on error
       const storedUser = await AsyncStorage.getItem('user_data');
@@ -144,6 +160,13 @@ const Profile = () => {
         setSwitchRole(userData.user_type === 'driver'); // Revert to original state
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Switch Role Error:', error);
       Alert.alert('Error', 'Failed to switch role');
       setSwitchRole(userData.user_type === 'driver'); // Revert to original state
@@ -224,6 +247,13 @@ const Profile = () => {
         Alert.alert('Error', response.data.message || 'Update failed');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Update Error:', error);
       if (error.response) {
         console.error('Error Data:', error.response.data);
@@ -244,6 +274,13 @@ const Profile = () => {
       try {
         await GoogleSignin.signOut();
       } catch (e) {
+        if (e.response && e.response.status === 401) {
+          await AsyncStorage.removeItem('access_token');
+          await AsyncStorage.removeItem('user_data');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
+
         // Ignore if already signed out or error
       }
 
@@ -253,6 +290,13 @@ const Profile = () => {
         routes: [{ name: 'Login' }],
       });
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Failed to logout', error);
     }
   };
@@ -267,7 +311,7 @@ const Profile = () => {
       >
 
         {/* ================= MODERN HEADER ================= */}
-        <View style={styles.header}>
+        <View style={[styles.header, { height: verticalScale(160) + insets.top, paddingTop: insets.top }]}>
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -501,7 +545,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#248907',
     height: verticalScale(180),
-    paddingTop: Platform.OS === 'ios' ? 0 : verticalScale(20),
     borderBottomLeftRadius: moderateScale(35),
     borderBottomRightRadius: moderateScale(35),
     elevation: 8,

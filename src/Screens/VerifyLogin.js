@@ -1,15 +1,15 @@
 import React from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   StatusBar,
   Alert,
   Platform,
-  PermissionsAndroid,
+  PermissionsAndroid
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +17,7 @@ import ImagePicker from 'react-native-image-crop-picker';
 
 const VerifyIdentity = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   /* ✅ Permission Request */
   const requestPermission = async () => {
@@ -71,11 +72,11 @@ const VerifyIdentity = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['right', 'left', 'bottom']}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: insets.top }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="close" size={26} color="#000" />
         </TouchableOpacity>
@@ -126,18 +127,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 30,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 25,
+    paddingTop: 10,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
     color: '#000',
-    marginLeft: 70,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 26, // Balance the back button
   },
   heading: {
     fontSize: 22,
@@ -194,4 +197,3 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 });
-

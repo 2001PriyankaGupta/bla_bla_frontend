@@ -12,7 +12,7 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import { useNavigation } from '@react-navigation/native';
@@ -28,16 +28,31 @@ const CreateAccount = () => {
   const [password, setPassword] = useState(''); // Added state for password
   const [phone, setPhone] = useState(''); // Added state for phone
   const [profileImage, setProfileImage] = useState(null); // Added state for profile image
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [errorModalTitle, setErrorModalTitle] = useState('');
-  const [errorModalMessage, setErrorModalMessage] = useState('');
+  const [modalState, setModalState] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'error',
+    onConfirm: null,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added isSubmitting state
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+
+  const showModal = (title, message, type = 'error', onConfirm = null) => {
+    setModalState({ visible: true, title, message, type, onConfirm });
+  };
+
+  const handleModalConfirm = () => {
+    setModalState(prev => ({ ...prev, visible: false }));
+    if (modalState.onConfirm) {
+      modalState.onConfirm();
+    }
+  };
 
   // Custom alert display
   const showError = (title, message) => {
-    setErrorModalTitle(title);
-    setErrorModalMessage(message);
-    setErrorModalVisible(true);
+    showModal(title, message, 'error');
   };
 
   // Function to handle image selection
@@ -91,6 +106,8 @@ const CreateAccount = () => {
       });
     }
 
+    setIsSubmitting(true); // Disable button immediately when API call starts
+
     try {
       console.log('Sending request to:', `${BASE_URL}auth/register`);
       const response = await axios.post(`${BASE_URL}auth/register`, formData, {
@@ -101,31 +118,36 @@ const CreateAccount = () => {
 
       console.log('Response:', response.data);
 
-      if (response.data.status === "true" || response.status === 200 || response.status === 201) {
+      if (response.data.status === "pending_verification") {
+        showModal('Verify Email', response.data.message || 'OTP sent to your email.', 'info', () => navigation.navigate('OtpScreen', { email: response.data.email || email }));
+      } else if (response.data.status === "true" || response.status === 200 || response.status === 201) {
         const { access_token, user } = response.data;
         if (access_token) {
           await AsyncStorage.setItem('access_token', access_token);
-          console.log('Access Token stored:', access_token);
         }
         if (user) {
           await AsyncStorage.setItem('user_data', JSON.stringify(user));
-          console.log('User Data stored:', user);
         }
 
-        Alert.alert('Success', 'User registered successfully', [
-          { text: 'OK', onPress: () => navigation.navigate('RideBookingPage') }
-        ]);
+        showModal('Success', 'User registered successfully', 'success', () => navigation.navigate('RideBookingPage'));
       } else {
-        showError('Registration Failed', response.data.message || 'We could not register your account. Please try again.');
+        showError('Registration Failed', response.data.error || response.data.message || 'We could not register your account. Please try again.');
       }
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Registration Error:', error);
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         console.error('Error Data:', error.response.data);
-        showError('Registration Failed', error.response.data.message || 'Something went wrong during registration.');
+        showError('Registration Failed', error.response.data.error || error.response.data.message || 'Something went wrong during registration.');
       } else if (error.request) {
         // The request was made but no response was received
         showError('Network Error', 'No response from server. Check your internet connection.');
@@ -133,6 +155,8 @@ const CreateAccount = () => {
         // Something happened in setting up the request that triggered an Error
         showError('Unexpected Error', 'An error occurred. Please try again later.');
       }
+    } finally {
+      setIsSubmitting(false); // Enable the button again after everything completes
     }
   };
 
@@ -146,10 +170,11 @@ const CreateAccount = () => {
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }} bounces={false} showsVerticalScrollIndicator={false}>
 
           {/* GREEN HEADER */}
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: insets.top + verticalScale(20) }]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 10, marginLeft: -15 }}>
+              <Icon name="arrow-left" size={28} color="#fff" />
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>Create Account</Text>
-
-
           </View>
 
           {/* WHITE CONTAINER FLOATING UP */}
@@ -218,12 +243,13 @@ const CreateAccount = () => {
               />
             </View>
 
-
-
-
             {/* NEXT BUTTON */}
-            <TouchableOpacity onPress={handleRegister} style={styles.nextButton}>
-              <Text style={styles.nextText}>Next</Text>
+            <TouchableOpacity
+              onPress={handleRegister}
+              style={[styles.nextButton, isSubmitting && { opacity: 0.7 }]}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.nextText}>{isSubmitting ? 'Submitting...' : 'Create Account'}</Text>
             </TouchableOpacity>
 
             {/* CANCEL */}
@@ -236,22 +262,26 @@ const CreateAccount = () => {
 
       {/* CUSTOM MODAL FOR ALERTS */}
       <Modal
-        visible={errorModalVisible}
+        visible={modalState.visible}
         transparent={true}
         animationType="fade"
       >
         <View style={styles.modalBg}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Icon name="alert-circle-outline" size={50} color="#e53935" />
-              <Text style={styles.modalTitle}>{errorModalTitle}</Text>
+              <Icon
+                name={modalState.type === 'error' ? 'alert-circle-outline' : modalState.type === 'success' ? 'check-circle-outline' : 'email-fast-outline'}
+                size={50}
+                color={modalState.type === 'error' ? '#e53935' : '#248907'}
+              />
+              <Text style={styles.modalTitle}>{modalState.title}</Text>
             </View>
-            <Text style={styles.modalText}>{errorModalMessage}</Text>
+            <Text style={styles.modalText}>{modalState.message}</Text>
             <TouchableOpacity
-              style={styles.modalBtn}
-              onPress={() => setErrorModalVisible(false)}
+              style={[styles.modalBtn, { backgroundColor: modalState.type === 'error' ? '#e53935' : '#248907' }]}
+              onPress={handleModalConfirm}
             >
-              <Text style={styles.modalBtnText}>Got it!</Text>
+              <Text style={styles.modalBtnText}>{modalState.type === 'error' ? 'Got it!' : 'Continue'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -271,20 +301,18 @@ const styles = StyleSheet.create({
 
   /* HEADER */
   header: {
-    paddingTop: verticalScale(40),
     backgroundColor: '#248907',
-    justifyContent: 'flex-end',
     paddingHorizontal: scale(25),
-    paddingBottom: verticalScale(80), // Increased to compensate for overlap
+    paddingBottom: verticalScale(100), // More padding to avoid being cut off
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   headerTitle: {
-    flex: 1,
-    fontSize: responsiveFontSize(60),
+    marginLeft: scale(10),
+    fontSize: responsiveFontSize(32),
     fontWeight: '800',
-    color: '#fff', // Changed back to white for visibility on green background
+    color: '#fff',
   },
 
   headerBell: {
@@ -407,7 +435,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   modalBtn: {
-    backgroundColor: '#248907',
     paddingVertical: verticalScale(14),
     paddingHorizontal: scale(40),
     borderRadius: moderateScale(15),
@@ -420,4 +447,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

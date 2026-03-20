@@ -13,7 +13,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -22,6 +22,7 @@ import { scale, verticalScale, moderateScale, responsiveFontSize } from '../util
 
 const YourRides = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('Upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,13 @@ const YourRides = () => {
         setUnreadCount(response.data.count);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error fetching unread count:', error);
     }
   };
@@ -59,6 +67,13 @@ const YourRides = () => {
         setUserId(userData.id);
       }
     } catch (e) {
+      if (e.response && e.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error(e);
     }
   };
@@ -77,6 +92,13 @@ const YourRides = () => {
         setBookings(fetchedBookings);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Fetch Bookings Error:', error);
     } finally {
       setLoading(false);
@@ -121,6 +143,13 @@ const YourRides = () => {
                 Alert.alert('Error', response.data.message || 'Failed to cancel.');
               }
             } catch (error) {
+              if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+              }
+
               console.error('Cancel Error:', error?.response?.data || error);
               Alert.alert('Error', 'Could not cancel. Please try again.');
             }
@@ -159,6 +188,13 @@ const YourRides = () => {
                 Alert.alert('Error', response.data.message || 'Failed to update seats.');
               }
             } catch (error) {
+              if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+              }
+
               console.error('Reduce Error Details:', error?.response?.data || error.message);
               const errMsg = error?.response?.data?.message || 'Could not reduce seats. Please try again.';
               Alert.alert('Update Failed', errMsg);
@@ -190,6 +226,13 @@ const YourRides = () => {
                 Alert.alert('Error', response.data.message || 'Failed to confirm.');
               }
             } catch (error) {
+              if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+              }
+
               console.error('Confirm Error:', error);
               Alert.alert('Error', 'Could not confirm booking.');
             }
@@ -220,6 +263,13 @@ const YourRides = () => {
                 Alert.alert('Error', response.data.message || 'Failed to update status.');
               }
             } catch (error) {
+              if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+              }
+
               console.error('Complete Error:', error);
               Alert.alert('Error', 'Could not complete ride.');
             }
@@ -349,7 +399,7 @@ const YourRides = () => {
       <StatusBar backgroundColor="#248907" barStyle="dark-content" translucent={false} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { height: verticalScale(60) + insets.top, paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={scale(28)} color="#fff" />
         </TouchableOpacity>
@@ -410,19 +460,21 @@ const YourRides = () => {
                     <View style={{ flex: 1 }}>
                       {/* Route */}
                       <Text style={styles.routeText} numberOfLines={1}>
-                        {item.location || item.ride?.pickup_point || '—'} → {item.destination || item.ride?.drop_point || '—'}
+                        {item.location || '—'} → {item.destination || '—'}
                       </Text>
 
-                      {/* Date & Seats */}
+                      {/* Date & Time & Seats */}
                       <View style={styles.metaRow}>
                         <Icon name="calendar" size={13} color="#888" />
-                        <Text style={styles.metaText}>{item.booking_date || '—'}</Text>
+                        <Text style={styles.metaText}>{item.date_display || '—'}</Text>
+                        <Icon name="clock-outline" size={13} color="#888" style={{ marginLeft: 10 }} />
+                        <Text style={styles.metaText}>{item.time || '—'}</Text>
                         <Icon name="seat-passenger" size={13} color="#888" style={{ marginLeft: 10 }} />
                         <Text style={styles.metaText}>{item.seats_booked} seat(s)</Text>
                       </View>
 
                       {/* Price */}
-                      <Text style={styles.priceText}>{item.price || item.total_price || '0'}</Text>
+                      <Text style={styles.priceText}>{item.price || 'Rs 0.00'}</Text>
 
                       {/* Status Badge */}
                       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
@@ -551,7 +603,6 @@ const styles = StyleSheet.create({
 
   /* Header */
   header: {
-    height: verticalScale(60),
     backgroundColor: '#248907',
     paddingHorizontal: scale(15),
     flexDirection: 'row',

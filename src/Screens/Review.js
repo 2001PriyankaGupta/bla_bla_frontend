@@ -16,10 +16,11 @@ import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { BASE_URL, IMG_URL } from '../config/config';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Review = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,13 @@ const Review = () => {
         setStats(null);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Fetch Reviews Error:', error?.response?.data || error.message);
       setReviews([]);
       setStats(null);
@@ -99,7 +107,7 @@ const Review = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: verticalScale(30) }}>
 
         {/* ── Header ── */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + verticalScale(15) }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
@@ -263,7 +271,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1fa000',
     paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(15),
+    paddingBottom: verticalScale(15),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -489,4 +497,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

@@ -13,7 +13,7 @@ import {
   Alert,
   PermissionsAndroid
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -29,6 +29,7 @@ import { promptForEnableLocationIfNeeded } from 'react-native-android-location-e
 
 const RideBookingPage = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [from, setFrom] = React.useState('');
   const [to, setTo] = React.useState('');
   const [departing, setDeparting] = React.useState(new Date().toISOString().split('T')[0]);
@@ -47,6 +48,13 @@ const RideBookingPage = () => {
         setUnreadCount(response.data.count);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error fetching unread count:', error);
     }
   };
@@ -194,6 +202,13 @@ const RideBookingPage = () => {
     }
 
     try {
+      // 1. Fetch from our Database (Active Routes)
+      const dbResponse = await axios.get(`${BASE_URL}locations/suggestions`, {
+        params: { query: query }
+      });
+      const dbSuggestions = dbResponse.data.predictions || [];
+
+      // 2. Fetch from Google
       const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
         params: {
           input: query,
@@ -201,13 +216,24 @@ const RideBookingPage = () => {
           components: 'country:in'
         }
       });
+      const googleSuggestions = response.data.predictions || [];
+
+      // Combine: DB suggestions first (they represent actual rides)
+      const combined = [...dbSuggestions, ...googleSuggestions];
 
       if (type === 'from') {
-        setFromSuggestions(response.data.predictions || []);
+        setFromSuggestions(combined);
       } else {
-        setToSuggestions(response.data.predictions || []);
+        setToSuggestions(combined);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.warn("Autocomplete error:", error);
     }
   };
@@ -223,12 +249,8 @@ const RideBookingPage = () => {
     }
 
     try {
-      const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
-        params: {
-          place_id: item.place_id,
-          key: GOOGLE_MAPS_API_KEY
-        }
-      });
+      const params = item.place_id ? { place_id: item.place_id, key: GOOGLE_MAPS_API_KEY } : { address: item.description, key: GOOGLE_MAPS_API_KEY };
+      const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, { params });
 
       if (response.data.results && response.data.results.length > 0) {
         const { lat, lng } = response.data.results[0].geometry.location;
@@ -246,6 +268,13 @@ const RideBookingPage = () => {
         }
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error("Geocoding error:", error);
     }
   };
@@ -268,19 +297,26 @@ const RideBookingPage = () => {
         Alert.alert('No rides', 'No rides available for this route.');
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       Alert.alert('Error', 'Failed to search rides.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#1fa000" translucent={false} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.headerContainer}>
             <Image source={require('../asset/Image/Ellipse.png')} style={styles.bgImage} />
             <TouchableOpacity
-              style={styles.bellButton}
+              style={[styles.bellButton, { top: verticalScale(10) + insets.top }]}
               onPress={() => navigation.navigate('Inbox')}
             >
               <Icon name="bell" size={28} color="#fff" />
@@ -290,7 +326,7 @@ const RideBookingPage = () => {
                 </View>
               )}
             </TouchableOpacity>
-            <Text style={styles.title}>Pick your ride at lowest{'\n'}prices</Text>
+            <Text style={[styles.title, { marginTop: verticalScale(20) + insets.top }]}>Pick your ride at lowest{'\n'}prices</Text>
           </View>
 
           <View style={styles.card}>
@@ -448,7 +484,6 @@ const styles = StyleSheet.create({
   locationBtn: { paddingHorizontal: scale(10), justifyContent: 'center', alignItems: 'center', height: verticalScale(45), marginBottom: verticalScale(10) },
   bellButton: {
     position: 'absolute',
-    top: verticalScale(10),
     right: scale(20),
     backgroundColor: 'rgba(255,255,255,0.2)',
     width: moderateScale(48),

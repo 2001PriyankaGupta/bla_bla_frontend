@@ -7,7 +7,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignUp = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const signInWithGoogle = async () => {
     try {
@@ -26,6 +27,13 @@ const SignUp = () => {
       try {
         await GoogleSignin.signOut();
       } catch (e) {
+        if (e.response && e.response.status === 401) {
+          await AsyncStorage.removeItem('access_token');
+          await AsyncStorage.removeItem('user_data');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
+
         // Ignore if not signed in
       }
 
@@ -69,6 +77,13 @@ const SignUp = () => {
       }
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         console.log('User cancelled the login flow');
       } else if (error.code === statusCodes.IN_PROGRESS) {
@@ -88,14 +103,14 @@ const SignUp = () => {
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
       {/* Title */}
-      <Text style={styles.title}>Let’s You In</Text>
+      <Text style={[styles.title, { marginTop: insets.top + verticalScale(20) }]}>Create Account</Text>
 
       {/* Sign Up Button */}
       <TouchableOpacity
         onPress={() => navigation.navigate('SignUpDetails')}
         style={styles.SignUp}
       >
-        <Text style={styles.text}>Sign Up</Text>
+        <Text style={styles.text}>Create Account</Text>
       </TouchableOpacity>
 
       <View style={styles.orRow}>
@@ -141,14 +156,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#fff',
-    paddingTop: verticalScale(40),
   },
 
   title: {
     fontSize: responsiveFontSize(38),
     fontWeight: '800',
     textAlign: 'center',
-    marginTop: verticalScale(40),
     width: '80%',
   },
 
@@ -230,6 +243,6 @@ const styles = StyleSheet.create({
     borderRadius: scale(35),
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 0,
   },
 });
-

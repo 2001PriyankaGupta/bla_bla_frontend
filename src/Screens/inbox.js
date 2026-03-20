@@ -1,24 +1,28 @@
+import { formatDateTime } from '../utils/DateUtils';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Platform,
   RefreshControl,
-  ActivityIndicator,
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config/config';
 
 const Inbox = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('Notifications');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +39,13 @@ const Inbox = () => {
         setNotifications(response.data.data);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
@@ -61,6 +72,13 @@ const Inbox = () => {
       });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error marking as read:', error);
     }
   };
@@ -73,6 +91,13 @@ const Inbox = () => {
       });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error marking all as read:', error);
     }
   };
@@ -94,7 +119,7 @@ const Inbox = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { height: verticalScale(60) + insets.top, paddingTop: insets.top }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
@@ -181,7 +206,7 @@ const Inbox = () => {
                         </View>
                         <Text style={styles.notifDesc}>{item.message}</Text>
                         <Text style={styles.notifTime}>
-                          {new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {formatDateTime(item.created_at)}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -247,10 +272,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     backgroundColor: '#248907',
-    height: Platform.OS === 'ios' ? 120 : 100,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   backBtn: { position: 'absolute', left: 15, bottom: 20 },
   headerTitle: {

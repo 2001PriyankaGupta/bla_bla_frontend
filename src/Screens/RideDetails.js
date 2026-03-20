@@ -1,3 +1,4 @@
+import { formatDateTime } from '../utils/DateUtils';
 import {
     View,
     Text,
@@ -12,7 +13,7 @@ import {
     Switch,
     KeyboardAvoidingView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -24,6 +25,7 @@ import { scale, verticalScale, moderateScale, responsiveFontSize } from '../util
 
 const RideDetails = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const route = useRoute();
     console.log('RideDetails Params:', route.params);
     const { rideId } = route.params || {};
@@ -39,6 +41,7 @@ const RideDetails = () => {
     const [rideData, setRideData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [isAddingStop, setIsAddingStop] = useState(false);
 
     // Edit Form State
     const [pickup, setPickup] = useState('');
@@ -50,6 +53,9 @@ const RideDetails = () => {
     const [seats, setSeats] = useState('');
     const [price, setPrice] = useState('');
     const [status, setStatus] = useState('active');
+    const [stopPoints, setStopPoints] = useState([]); // [{city_name: '', price_from_pickup: ''}]
+    const [currentStopQuery, setCurrentStopQuery] = useState('');
+    const [stopSuggestions, setStopSuggestions] = useState([]);
 
 
 
@@ -75,10 +81,19 @@ const RideDetails = () => {
 
             if (type === 'pickup') {
                 setPickupSuggestions(response.data.predictions || []);
-            } else {
+            } else if (type === 'drop') {
                 setDropSuggestions(response.data.predictions || []);
+            } else if (type === 'stop') {
+                setStopSuggestions(response.data.predictions || []);
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.warn("Autocomplete error:", error);
         }
     };
@@ -117,6 +132,13 @@ const RideDetails = () => {
                 setUserCars(response.data.data || []);
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Fetch Cars Error:', error);
         }
     };
@@ -141,7 +163,9 @@ const RideDetails = () => {
 
                 // Initialize Date Object for Picker
                 if (data.date_time) {
-                    setDate(new Date(data.date_time));
+                    // Use the raw string and ensure no double offset by checking string format
+                    const rawDate = new Date(data.date_time.replace(' ', 'T'));
+                    setDate(rawDate);
                 }
 
                 setSeats(data.total_seats ? String(data.total_seats) : '');
@@ -154,12 +178,20 @@ const RideDetails = () => {
                     setSelectedCarId(data.car_id);
                 }
 
+                setStopPoints(data.stop_points || []);
                 setLuggage(data.luggage_allowed === 1 || data.luggage_allowed === true);
             } else {
                 Alert.alert('Error', 'Failed to fetch ride details.');
                 navigation.goBack();
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Fetch Ride Error:', error);
             Alert.alert('Error', 'An error occurred while fetching ride details.');
             navigation.goBack();
@@ -168,16 +200,15 @@ const RideDetails = () => {
         }
     };
 
-    const formatDateTime = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            day: 'numeric', month: 'short', year: 'numeric',
-            hour: 'numeric', minute: 'numeric', hour12: true
-        });
-    };
 
-    // Helper to format date for API (YYYY-MM-DD HH:MM:SS)
+
+    useEffect(() => {
+        if (date) {
+            setDateTime(formatDateTime(date));
+        }
+    }, [date]);
+
+    // Helper to format date for API (YYYY-MM-DD HH:MM:SS) - Ensuring Local Time
     const formatDateForApi = (dateObj) => {
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -216,6 +247,13 @@ const RideDetails = () => {
                 Alert.alert('Error', response.data.message || 'Failed to delete ride.');
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Delete Ride Error:', error);
             Alert.alert('Error', 'An error occurred while deleting the ride.');
         } finally {
@@ -236,10 +274,13 @@ const RideDetails = () => {
             date_time: formatDateForApi(date),
             total_seats: parseInt(seats),
             price_per_seat: parseFloat(price),
-            car_id: selectedCarId,
-            car_make: userCars.find(c => c.id === selectedCarId)?.car_make || '',
-            luggage_allowed: luggage,
-            status: status
+            car_make: userCars.find(c => c.id === selectedCarId)?.car_make || (rideData.car ? rideData.car.car_make : ''),
+            luggage_allowed: luggage ? 1 : 0,
+            status: status,
+            stop_points: stopPoints.map(sp => ({
+                city_name: sp.city_name,
+                price: sp.price_from_pickup || sp.price
+            }))
         };
 
         console.log('Update Payload (POST):', payload);
@@ -258,12 +299,20 @@ const RideDetails = () => {
             if (response.data.status === true || response.status === 200) {
                 Alert.alert('Success', 'Ride updated successfully');
                 setIsEditing(false);
+                setIsAddingStop(false); // Reset add stop state
                 fetchRideDetails();
             } else {
                 Alert.alert('Error', response.data.message || 'Failed to update ride.');
             }
 
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error('Update Ride Error:', error);
             Alert.alert('Error', 'An error occurred while updating the ride.');
         } finally {
@@ -286,7 +335,7 @@ const RideDetails = () => {
             <StatusBar barStyle="dark-content" translucent={false} />
 
             {/* Header */}
-            <View style={styles.headerView}>
+            <View style={[styles.headerView, { paddingTop: insets.top + verticalScale(10) }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -333,6 +382,27 @@ const RideDetails = () => {
                             <Text style={styles.routePoint}>{rideData.drop_point}</Text>
                         </View>
                     </View>
+
+                    {/* ── Stop Points List (View Mode) ── */}
+                    {!isEditing && rideData.stop_points && rideData.stop_points.length > 0 && (
+                        <View style={styles.infoCard}>
+                            <Text style={styles.cardTitle}>Intermediate Stops</Text>
+                            {rideData.stop_points.map((stop, idx) => (
+                                <View key={stop.id || idx} style={{ marginBottom: 10 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}>
+                                            <Icon name="record-circle-outline" size={18} color="#248907" />
+                                            <Text style={{ marginLeft: 10, fontSize: 14, color: '#333', fontWeight: '500', flex: 1 }} numberOfLines={2}>
+                                                {stop.city_name}
+                                            </Text>
+                                        </View>
+                                        <Text style={{ fontWeight: '700', color: '#248907', fontSize: 15 }}>₹{stop.price_from_pickup}</Text>
+                                    </View>
+                                    {idx < rideData.stop_points.length - 1 && <View style={[styles.divider, { marginVertical: 8, height: 0.5 }]} />}
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     {/* Date & Price Card */}
                     <View style={styles.infoCard}>
@@ -453,6 +523,99 @@ const RideDetails = () => {
                                 )}
                             </View>
 
+                            {/* Edit Stop Points */}
+                            <View style={styles.stopSectionContainer}>
+                                <View style={styles.stopSectionHeader}>
+                                    <Text style={styles.sectionLabel}>Route Stops</Text>
+                                    {!isAddingStop && (
+                                        <TouchableOpacity
+                                            style={styles.addStopBtn}
+                                            onPress={() => setIsAddingStop(true)}
+                                        >
+                                            <Icon name="plus-circle" size={18} color="#248907" />
+                                            <Text style={styles.addStopBtnText}>Add City</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+
+                                {stopPoints.map((stop, index) => (
+                                    <View key={index} style={styles.stopCard}>
+                                        <View style={styles.stopCardLeft}>
+                                            <Icon name="record-circle-outline" size={20} color="#248907" />
+                                            <View style={{ flex: 1, marginLeft: 10 }}>
+                                                <Text style={styles.stopCityName} numberOfLines={1}>{stop.city_name}</Text>
+                                                <TextInput
+                                                    placeholder="Price from pickup (₹)"
+                                                    placeholderTextColor="#999"
+                                                    keyboardType="numeric"
+                                                    style={styles.stopPriceInput}
+                                                    value={String(stop.price_from_pickup || stop.price || '')}
+                                                    onChangeText={(p) => {
+                                                        const newStops = [...stopPoints];
+                                                        newStops[index].price_from_pickup = p;
+                                                        setStopPoints(newStops);
+                                                    }}
+                                                />
+                                            </View>
+                                        </View>
+                                        <TouchableOpacity onPress={() => {
+                                            const newStops = stopPoints.filter((_, i) => i !== index);
+                                            setStopPoints(newStops);
+                                        }}>
+                                            <Icon name="close-circle" size={24} color="#ff4d4d" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+
+                                {isAddingStop && (
+                                    <View style={styles.stopInputWrapper}>
+                                        <View style={styles.stopInputHeader}>
+                                            <Icon name="magnify" size={20} color="#555" />
+                                            <TextInput
+                                                autoFocus
+                                                placeholder="Search city..."
+                                                placeholderTextColor="#777"
+                                                style={styles.stopInlineInput}
+                                                value={currentStopQuery}
+                                                onChangeText={(text) => {
+                                                    setCurrentStopQuery(text);
+                                                    fetchSuggestions(text, 'stop');
+                                                }}
+                                            />
+                                            <TouchableOpacity onPress={() => {
+                                                setIsAddingStop(false);
+                                                setCurrentStopQuery('');
+                                                setStopSuggestions([]);
+                                            }}>
+                                                <Icon name="close" size={20} color="#555" />
+                                            </TouchableOpacity>
+                                        </View>
+
+                                        {stopSuggestions.length > 0 && (
+                                            <View style={styles.stopSuggestionsBox}>
+                                                <ScrollView keyboardShouldPersistTaps="always">
+                                                    {stopSuggestions.map((item, index) => (
+                                                        <TouchableOpacity
+                                                            key={index}
+                                                            style={styles.suggestionRow}
+                                                            onPress={() => {
+                                                                setStopPoints([...stopPoints, { city_name: item.description, price_from_pickup: '' }]);
+                                                                setCurrentStopQuery('');
+                                                                setStopSuggestions([]);
+                                                                setIsAddingStop(false);
+                                                            }}
+                                                        >
+                                                            <Icon name="map-marker-plus" size={18} color="#248907" />
+                                                            <Text style={styles.suggestionText} numberOfLines={1}>{item.description}</Text>
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+                            </View>
+
                             <View style={styles.fieldContainer}>
                                 <Text style={styles.label}>Date & Time</Text>
                                 <TouchableOpacity
@@ -460,7 +623,7 @@ const RideDetails = () => {
                                     onPress={() => setOpen(true)}
                                 >
                                     <Text style={{ color: '#000' }}>
-                                        {date.toLocaleString()}
+                                        {formatDateTime(date)}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -580,7 +743,6 @@ const RideDetails = () => {
 
                 </ScrollView>
             </KeyboardAvoidingView>
-
         </SafeAreaView>
     );
 };
@@ -595,11 +757,11 @@ const styles = StyleSheet.create({
     headerView: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: verticalScale(15),
+        paddingBottom: verticalScale(15),
         marginBottom: verticalScale(10),
         paddingHorizontal: scale(20),
         backgroundColor: '#248907',
-        marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        // Removed extra margin to fix white gap
     },
     headerText: {
         fontSize: responsiveFontSize(20),
@@ -765,6 +927,12 @@ const styles = StyleSheet.create({
         fontSize: responsiveFontSize(16),
         color: '#000',
     },
+    // Stop Point Edit Styles (Legacy - Cleaned up in favor of stopCard)
+    stopCityNameLegacy: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333'
+    },
     deleteButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -893,6 +1061,107 @@ const styles = StyleSheet.create({
     suggestionText: {
         fontSize: responsiveFontSize(14),
         color: '#333',
+    },
+    // ── Better Stop Points Styles ──
+    stopSectionContainer: {
+        marginBottom: verticalScale(20),
+        backgroundColor: '#fff',
+    },
+    stopSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    sectionLabel: {
+        fontSize: responsiveFontSize(14),
+        color: '#333',
+        fontWeight: '700',
+    },
+    addStopBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e9f5e6',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#248907',
+    },
+    addStopBtnText: {
+        fontSize: 13,
+        color: '#248907',
+        fontWeight: '700',
+        marginLeft: 4,
+    },
+    stopCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8fdf6',
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#d4efcc',
+        elevation: 1,
+        shadowColor: '#248907',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    stopCardLeft: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    stopCityName: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#333',
+    },
+    stopPriceInput: {
+        fontSize: 13,
+        color: '#248907',
+        padding: 0,
+        marginTop: 4,
+        borderBottomWidth: 1,
+        borderBottomColor: '#248907',
+        minWidth: 120,
+        fontWeight: '600',
+    },
+    stopInputWrapper: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#248907',
+        padding: 5,
+        marginBottom: 10,
+    },
+    stopInputHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+    },
+    stopInlineInput: {
+        flex: 1,
+        height: 40,
+        fontSize: 14,
+        color: '#333',
+        marginLeft: 8,
+    },
+    stopSuggestionsBox: {
+        maxHeight: 200,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        marginTop: 5,
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
     },
 });
 

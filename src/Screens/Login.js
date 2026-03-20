@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -15,10 +15,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Login = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'left', 'right']}>
-      <StatusBar barStyle="light-content" translucent />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'left', 'right', 'top']}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <View style={styles.container}>
 
@@ -27,8 +28,8 @@ const Login = () => {
           style={styles.Imagelogo}
         />
 
-        <Text style={styles.title}>Only EV...</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { top: verticalScale(80) + insets.top }]}>Only EV...</Text>
+        <Text style={[styles.subtitle, { top: verticalScale(160) + insets.top }]}>
           Arrive in Silence. Leave a Lighter {'\n'}Footprint.
         </Text>
 
@@ -56,16 +57,6 @@ const Login = () => {
             <Text style={styles.text2}>Login</Text>
           </TouchableOpacity>
 
-          {/* GUEST LOGIN */}
-          {/* <TouchableOpacity
-            onPress={async () => {
-              await AsyncStorage.setItem("isLoggedIn", "false");
-              navigation.replace("RideBookingPage");
-            }}
-            style={styles.SignUp}>
-            <Text style={styles.text}> Guest</Text>
-          </TouchableOpacity> */}
-
         </View>
 
       </View>
@@ -84,13 +75,13 @@ const styles = StyleSheet.create({
   Imagelogo: {
     width: '100%',
     height: verticalScale(450),
+    marginTop: verticalScale(-50), // Adjust for top edge
   },
   title: {
     fontSize: responsiveFontSize(48),
     color: '#fff',
     position: 'absolute',
     left: scale(30),
-    top: verticalScale(100),
     fontWeight: '600',
   },
   subtitle: {
@@ -98,7 +89,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     position: 'absolute',
     left: scale(30),
-    top: verticalScale(180),
     lineHeight: verticalScale(26),
   },
   car: {
@@ -115,7 +105,6 @@ const styles = StyleSheet.create({
   btnWrapper: {
     width: '100%',
     alignItems: 'center',
-    marginTop: verticalScale(30),
     gap: verticalScale(12),
   },
   SignUp: {
@@ -147,4 +136,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
 

@@ -1,3 +1,5 @@
+import { formatDateTime } from '../utils/DateUtils';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -14,7 +16,7 @@ import {
   RefreshControl,
   KeyboardAvoidingView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -26,6 +28,7 @@ import { scale, verticalScale, moderateScale, responsiveFontSize } from '../util
 
 const OfferRide = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'offer'
 
   // Offer Ride Form State
@@ -40,6 +43,10 @@ const OfferRide = () => {
   const [showCarDropdown, setShowCarDropdown] = useState(false);
   const [luggage, setLuggage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [stopPoints, setStopPoints] = useState([]); // [{city_name: '', price: ''}]
+  const [currentStopQuery, setCurrentStopQuery] = useState('');
+  const [stopSuggestions, setStopSuggestions] = useState([]);
+  const [isAddingStop, setIsAddingStop] = useState(false); // UI toggle for stop point input
 
   // User Cars
   const [userCars, setUserCars] = useState([]);
@@ -57,10 +64,18 @@ const OfferRide = () => {
     if (query.length < 3) {
       if (type === 'pickup') setPickupSuggestions([]);
       if (type === 'drop') setDropSuggestions([]);
+      if (type === 'stop') setStopSuggestions([]);
       return;
     }
 
     try {
+      // 1. Fetch from our Database
+      const dbResponse = await axios.get(`${BASE_URL}locations/suggestions`, {
+        params: { query: query }
+      });
+      const dbSuggestions = dbResponse.data.predictions || [];
+
+      // 2. Fetch from Google
       const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
         params: {
           input: query,
@@ -68,13 +83,25 @@ const OfferRide = () => {
           components: 'country:in'
         }
       });
+      const googleSuggestions = response.data.predictions || [];
+
+      // Combine
+      const combined = [...dbSuggestions, ...googleSuggestions];
 
       if (type === 'pickup') {
-        setPickupSuggestions(response.data.predictions || []);
-      } else {
-        setDropSuggestions(response.data.predictions || []);
+        setPickupSuggestions(combined);
+      } else if (type === 'drop') {
+        setDropSuggestions(combined);
+      } else if (type === 'stop') {
+        setStopSuggestions(combined);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
       console.warn("Autocomplete error:", error);
     }
   };
@@ -100,6 +127,13 @@ const OfferRide = () => {
         setUserCars(response.data.data || []);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Fetch Cars Error:', error);
     }
   };
@@ -112,20 +146,30 @@ const OfferRide = () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       // GET request to rides endpoint
       const response = await axios.get(`${BASE_URL}rides`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       console.log('Fetch Rides Response:', response.data);
 
       if (response.data.status === true || response.status === 200) {
         setMyRides(response.data.data || []);
       } else {
-        // Handle empty or error
         setMyRides([]);
       }
     } catch (error) {
       console.error('Fetch Rides Error:', error);
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
       Alert.alert('Error', 'Failed to fetch your rides.');
     } finally {
       setLoading(false);
@@ -164,7 +208,8 @@ const OfferRide = () => {
       car_id: selectedCarId,
       car_make: selectedCar ? selectedCar.car_make : '',
       luggage_allowed: luggage,
-      status: 'active'
+      status: 'active',
+      stop_points: stopPoints // Add stop points to payload
     };
 
     try {
@@ -178,6 +223,7 @@ const OfferRide = () => {
         Alert.alert('Success', 'Ride offered successfully!');
         // Reset Form
         setPickup(''); setDrop(''); setDateTime(''); setDate(new Date()); setSeats(''); setPrice(''); setLuggage(false); setSelectedCarId(null);
+        setStopPoints([]); // Reset stop points
         // Switch to list
         setActiveTab('list');
       } else {
@@ -185,6 +231,13 @@ const OfferRide = () => {
       }
 
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Create Ride Error:', error);
       Alert.alert('Error', 'An error occurred while creating the ride.');
     } finally {
@@ -194,14 +247,7 @@ const OfferRide = () => {
 
 
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: 'numeric', minute: 'numeric', hour12: true
-    });
-  };
+
 
   // Helper: grab first meaningful part of a long address
   const shortLocation = (address) => {
@@ -281,6 +327,16 @@ const OfferRide = () => {
           )}
         </View>
 
+        {/* ── Created At ── */}
+        <View style={[styles.metaRow, { marginTop: -5 }]}>
+          <View style={styles.metaItem}>
+            <Icon name="history" size={15} color="#777" />
+            <Text style={[styles.metaText, { fontSize: responsiveFontSize(11), color: '#888' }]}>
+              Created on: {formatDateTime(item.created_at)}
+            </Text>
+          </View>
+        </View>
+
         {/* ── Seat Stats ── */}
         <View style={styles.seatBox}>
           {/* 3 stat pills */}
@@ -333,7 +389,7 @@ const OfferRide = () => {
       <StatusBar barStyle="dark-content" translucent={false} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(5) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={28} color="#fff" />
         </TouchableOpacity>
@@ -447,9 +503,104 @@ const OfferRide = () => {
                     </View>
                   )}
                 </View>
+
+                {/* ───── STOP POINTS SECTION ───── */}
+                <View style={styles.stopSectionContainer}>
+                  <View style={styles.stopSectionHeader}>
+                    <Text style={styles.sectionLabel}>Add Stop Points</Text>
+                    {!isAddingStop && (
+                      <TouchableOpacity
+                        style={styles.addStopBtn}
+                        onPress={() => setIsAddingStop(true)}
+                      >
+                        <Icon name="plus-circle" size={18} color="#248907" />
+                        <Text style={styles.addStopBtnText}>Add City</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* List of Added Stops */}
+                  {stopPoints.map((stop, index) => (
+                    <View key={index} style={styles.stopCard}>
+                      <View style={styles.stopCardLeft}>
+                        <Icon name="record-circle-outline" size={20} color="#248907" />
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                          <Text style={styles.stopCityName} numberOfLines={1}>{stop.city_name}</Text>
+                          <TextInput
+                            placeholder="Price from pickup (₹)"
+                            placeholderTextColor="#999"
+                            keyboardType="numeric"
+                            style={styles.stopPriceInput}
+                            value={stop.price}
+                            onChangeText={(p) => {
+                              const newStops = [...stopPoints];
+                              newStops[index].price = p;
+                              setStopPoints(newStops);
+                            }}
+                          />
+                        </View>
+                      </View>
+                      <TouchableOpacity onPress={() => {
+                        const filtered = stopPoints.filter((_, i) => i !== index);
+                        setStopPoints(filtered);
+                      }}>
+                        <Icon name="close-circle" size={24} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
+                  {/* Search Input for New Stop (Toggled by Button) */}
+                  {isAddingStop && (
+                    <View style={styles.stopInputWrapper}>
+                      <View style={styles.stopInputHeader}>
+                        <Icon name="magnify" size={20} color="#555" />
+                        <TextInput
+                          autoFocus
+                          placeholder="Search stop city (e.g. Meerut)"
+                          placeholderTextColor="#777"
+                          style={styles.stopInlineInput}
+                          value={currentStopQuery}
+                          onChangeText={(text) => {
+                            setCurrentStopQuery(text);
+                            fetchSuggestions(text, 'stop');
+                          }}
+                        />
+                        <TouchableOpacity onPress={() => {
+                          setIsAddingStop(false);
+                          setCurrentStopQuery('');
+                          setStopSuggestions([]);
+                        }}>
+                          <Icon name="close" size={20} color="#555" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {stopSuggestions.length > 0 && (
+                        <View style={styles.stopSuggestionsBox}>
+                          <ScrollView keyboardShouldPersistTaps="always">
+                            {stopSuggestions.map((item, index) => (
+                              <TouchableOpacity
+                                key={index}
+                                style={styles.suggestionRow}
+                                onPress={() => {
+                                  setStopPoints([...stopPoints, { city_name: item.description, price: '' }]);
+                                  setCurrentStopQuery('');
+                                  setStopSuggestions([]);
+                                  setIsAddingStop(false);
+                                }}
+                              >
+                                <Icon name="map-marker-plus" size={18} color="#248907" />
+                                <Text style={styles.suggestionText} numberOfLines={1}>{item.description}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
                 <TouchableOpacity onPress={() => setOpen(true)} style={styles.dateButton}>
-                  <Text style={[styles.dateButtonText, !dateTime && { color: '#777' }]}>
-                    {dateTime ? dateTime : "Select Date & Time"}
+                  <Text style={[styles.dateButtonText, !date && { color: '#777' }]}>
+                    {date ? formatDateTime(date) : "Select Date & Time"}
                   </Text>
                   <Icon name="calendar" size={20} color="#248907" />
                 </TouchableOpacity>
@@ -580,7 +731,7 @@ const OfferRide = () => {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -593,7 +744,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#248907',
-    paddingVertical: verticalScale(15),
+    paddingBottom: verticalScale(15),
     paddingHorizontal: scale(15),
     flexDirection: 'row',
     alignItems: 'center',
@@ -649,6 +800,119 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     color: '#000',
+  },
+  // Stop Point Styles
+  addStopRow: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  // ── Better Stop Points Styles ──
+  stopSectionContainer: {
+    marginBottom: verticalScale(20),
+    backgroundColor: '#fff',
+  },
+  stopSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  sectionLabel: {
+    fontSize: responsiveFontSize(15),
+    color: '#333',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  addStopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: '#248907',
+    elevation: 3,
+    shadowColor: '#248907',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  addStopBtnText: {
+    fontSize: 14,
+    color: '#248907',
+    fontWeight: '800',
+    marginLeft: 6,
+  },
+  stopCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  stopCardLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stopCityName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#333',
+  },
+  stopPriceInput: {
+    fontSize: 13,
+    color: '#248907',
+    padding: 0,
+    marginTop: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#248907',
+    minWidth: 120,
+    fontWeight: '600',
+  },
+  stopInputWrapper: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#248907',
+    padding: 5,
+    marginBottom: 10,
+  },
+  stopInputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  stopInlineInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+  },
+  stopSuggestionsBox: {
+    maxHeight: 200,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    marginTop: 5,
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   row: {
     flexDirection: 'row',

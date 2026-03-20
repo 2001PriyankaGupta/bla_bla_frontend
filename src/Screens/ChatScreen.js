@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
     TextInput,
     FlatList,
@@ -28,6 +29,7 @@ import { BASE_URL, IMG_URL } from '../config/config';
 
 const ChatScreen = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const route = useRoute();
     const { driverName, driverImage, rideId, receiverId } = route.params || {};
 
@@ -93,6 +95,13 @@ const ChatScreen = () => {
                 setLoading(false);
             }
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Fetch Messages Error:", error);
             setLoading(false);
         }
@@ -148,6 +157,13 @@ const ChatScreen = () => {
             }
 
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Send Message Error:", error);
             if (type === 'text') setInputText(msgText); // Restore text on failure
             if (error.response) {
@@ -295,7 +311,7 @@ const ChatScreen = () => {
             <StatusBar barStyle="dark-content" />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Icon name="arrow-left" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -402,7 +418,8 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
+        paddingHorizontal: 15,
+        paddingBottom: 15,
         backgroundColor: '#248907',
         elevation: 4,
 

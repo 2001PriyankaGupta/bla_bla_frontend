@@ -18,10 +18,11 @@ import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { BASE_URL } from '../config/config';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddReviewScreen = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const route = useRoute();
 
     const { bookingId, targetRole, driverId, userId } = route.params || {};
@@ -64,6 +65,13 @@ const AddReviewScreen = () => {
             }
 
         } catch (error) {
+            if (error.response && error.response.status === 401) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('user_data');
+                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                return;
+            }
+
             console.error("Submit Review Error:", error.response?.data || error.message);
             const msg = error.response?.data?.message || "An error occurred";
             Alert.alert("Error", msg);
@@ -77,7 +85,7 @@ const AddReviewScreen = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#248907" translucent={false} />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="close" size={scale(24)} color="#fff" />
                 </TouchableOpacity>
@@ -153,7 +161,8 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#1fa000',
-        padding: scale(15),
+        paddingHorizontal: scale(15),
+        paddingBottom: verticalScale(15),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between'

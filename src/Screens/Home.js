@@ -11,7 +11,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { BASE_URL } from '../config/config';
@@ -20,6 +20,7 @@ import { scale, verticalScale, moderateScale, responsiveFontSize } from '../util
 
 const Home = ({ route }) => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnreadCount = async () => {
@@ -33,6 +34,13 @@ const Home = ({ route }) => {
         setUnreadCount(response.data.count);
       }
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        await AsyncStorage.removeItem('access_token');
+        await AsyncStorage.removeItem('user_data');
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        return;
+      }
+
       console.error('Error fetching unread count:', error);
     }
   };
@@ -78,8 +86,13 @@ const Home = ({ route }) => {
   }, []);
 
   const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!dateString) return '';
+    // Clean string by removing Z/T to prevent offset shifts
+    const cleanDate = typeof dateString === 'string'
+      ? dateString.replace('Z', '').replace('T', ' ')
+      : dateString;
+    const date = new Date(cleanDate);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   // Helper to shorten long address (e.g., "Connaught Place, New Delhi..." -> "Connaught Place")
@@ -93,7 +106,7 @@ const Home = ({ route }) => {
       <StatusBar barStyle='dark-content' backgroundColor="#248907" translucent={false} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
 
         <View style={styles.locationRow}>
           <View style={styles.locationBox}>
@@ -152,19 +165,37 @@ const Home = ({ route }) => {
               <TouchableOpacity
                 key={ride.id}
                 style={styles.rideCard}
-                onPress={() => navigation.navigate('Prefrance', { rideData: ride })}
+                onPress={() => navigation.navigate('Prefrance', {
+                  rideData: ride,
+                  searchPickup: searchCriteria.from,
+                  searchDrop: searchCriteria.to
+                })}
               >
                 <View style={styles.rideTopRow}>
-                  <View style={styles.timeTag}>
+                  <View style={[styles.timeTag, { flex: 1, marginRight: 10 }]}>
                     <Icon name="clock-outline" size={14} color="#248907" />
-                    <Text style={styles.timeText}>{formatTime(ride.date_time)}</Text>
+                    <Text style={styles.timeText} numberOfLines={1}>{formatTime(ride.date_time)}</Text>
                   </View>
-                  <Text style={styles.priceText}>₹{ride.price_per_seat}</Text>
+                  <Text style={styles.priceText} numberOfLines={1}>₹{ride.price_per_seat}</Text>
                 </View>
 
                 <Text style={styles.routeText} numberOfLines={2}>
                   {shortLocation(ride.pickup_point)} → {shortLocation(ride.drop_point)}
                 </Text>
+
+                {/* ── Stop Points (Intermediate Cities) ── */}
+                {ride.stop_points && ride.stop_points.length > 0 && (
+                  <View style={styles.stopsWrapper}>
+                    <View style={styles.stopsIndicator}>
+                      <View style={styles.stopDot} />
+                      <View style={styles.stopLine} />
+                      <View style={styles.stopDot} />
+                    </View>
+                    <Text style={styles.stopsText} numberOfLines={1}>
+                      via: <Text style={{ fontWeight: '600', color: '#444' }}>{ride.stop_points.map(s => s.city_name.split(',')[0]).join(', ')}</Text>
+                    </Text>
+                  </View>
+                )}
 
                 <View style={styles.carInfoRow}>
                   <Icon name="car-outline" size={14} color="#666" />
@@ -229,7 +260,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#248907',
     paddingHorizontal: scale(15),
-    paddingTop: verticalScale(10),
     paddingBottom: verticalScale(20),
     borderBottomLeftRadius: moderateScale(25),
     borderBottomRightRadius: moderateScale(25),
@@ -407,11 +437,41 @@ const styles = StyleSheet.create({
   },
 
   routeText: {
-    fontSize: responsiveFontSize(16),
-    fontWeight: '700',
-    color: '#333',
     lineHeight: verticalScale(24),
-    marginBottom: verticalScale(8),
+    marginBottom: verticalScale(2),
+  },
+  stopsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(10),
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(8),
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  stopsIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: scale(8),
+  },
+  stopDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#248907',
+  },
+  stopLine: {
+    width: 10,
+    height: 1.5,
+    backgroundColor: '#ccc',
+    marginHorizontal: 2,
+  },
+  stopsText: {
+    fontSize: responsiveFontSize(11.5),
+    color: '#666',
+    flex: 1,
   },
 
   carInfoRow: {
