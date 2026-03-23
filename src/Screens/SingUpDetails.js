@@ -129,7 +129,12 @@ const CreateAccount = () => {
           await AsyncStorage.setItem('user_data', JSON.stringify(user));
         }
 
-        showModal('Success', 'User registered successfully', 'success', () => navigation.navigate('RideBookingPage'));
+        showModal('Success', 'User registered successfully', 'success', () => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'RideBookingPage' }],
+          });
+        });
       } else {
         showError('Registration Failed', response.data.error || response.data.message || 'We could not register your account. Please try again.');
       }

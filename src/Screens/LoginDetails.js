@@ -82,7 +82,12 @@ const LoginDetails = () => {
           if (user.id) await AsyncStorage.setItem('user_id', user.id.toString());
         }
 
-        showModal('Success', 'Login Successful!', 'success', () => navigation.navigate('RideBookingPage'));
+        showModal('Success', 'Login Successful!', 'success', () => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'RideBookingPage' }],
+          });
+        });
       } else {
         showModal('Error', response.data.message || 'Login failed');
       }
@@ -142,7 +147,12 @@ const LoginDetails = () => {
           }
         }
 
-        showModal('Success', 'Login Successful!', 'success', () => navigation.navigate('RideBookingPage'));
+        showModal('Success', 'Login Successful!', 'success', () => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'RideBookingPage' }],
+          });
+        });
       } else {
         showModal('Error', response.data.error || response.data.message || 'Login failed. Please try again.');
       }

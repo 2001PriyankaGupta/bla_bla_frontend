@@ -116,7 +116,10 @@ const OtpScreen = () => {
                 }
 
                 showModal('Success', 'Verification Successful!', 'success', () => {
-                    navigation.navigate('RideBookingPage');
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'RideBookingPage' }],
+                    });
                 });
             } else {
                 setOtp(''); // Clear OTP digits on error

@@ -22,7 +22,7 @@ import { BASE_URL } from '../config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* ---------------- SEAT ITEM ---------------- */
-const renderSeat = (item, selectedSeats, handleSelectSeat) => {
+const renderSeat = (item, selectedSeats, handleSelectSeat, currentPrice) => {
   const isSelected = selectedSeats.includes(item.id);
   const isBooked = item.booked;
 
@@ -41,7 +41,7 @@ const renderSeat = (item, selectedSeats, handleSelectSeat) => {
           isSelected && { tintColor: '#248907' }
         ]}
       />
-      <Text style={styles.seatPrice}>Rs {item.price}</Text>
+      <Text style={styles.seatPrice}>Rs {currentPrice}</Text>
     </TouchableOpacity>
   );
 };
@@ -53,20 +53,39 @@ const SeatSelection = ({ route }) => {
 
   /* ---------------- SEAT ARRAY ---------------- */
   // Use rideData seats if available, else default to 5
-  // Check both 'seats' and 'total_seats' keys
   const totalCount = rideData?.seats || rideData?.total_seats || 5;
   const pricePerSeat = rideData?.price || rideData?.price_per_seat || 0;
-  const bookedCount = Number(rideData?.booked_seats || 0);
 
-  // Generate seats
-  const seats = Array.from({ length: totalCount }, (_, i) => ({
-    id: i + 1,
-    price: parseFloat(pricePerSeat),
-    img: require('../asset/Image/seat.png'),
-    booked: i < bookedCount
-  }));
+  // We'll calculate seats dynamically based on current selected drop
+  const getSeats = (avail) => {
+    const bookedCount = totalCount - avail;
+    return Array.from({ length: totalCount }, (_, i) => ({
+      id: i + 1,
+      price: parseFloat(pricePerSeat),
+      img: require('../asset/Image/seat.png'),
+      booked: i < bookedCount
+    }));
+  };
 
-  const availableSeatsCount = totalCount - bookedCount;
+  /* ---------------- SEARCH SEGMENT LOGIC ---------------- */
+  // Find which stops are AFTER our current pickup to show only valid drop points
+  const currentPickup = searchPickup || rideData?.pickup_point;
+  const stopPoints = rideData?.stop_points || [];
+
+  // We need to know the sequence of stops to filter them
+  const normalizeCity = (name) => name?.toLowerCase()?.split(',')[0]?.trim() || '';
+  const normalizedPickup = normalizeCity(currentPickup);
+
+  const pickupIdxInStops = stopPoints.findIndex(s => normalizeCity(s.city_name) === normalizedPickup);
+
+  // Valid drops are after the current pickup
+  const validStops = stopPoints.filter((s, idx) => {
+    const normalizedMainPickup = normalizeCity(rideData?.pickup_point);
+    // If our pickup is the main pickup, all stops are valid
+    if (normalizedPickup === normalizedMainPickup) return true;
+    // Else only stops with index > current pickup's index in stopPoints are valid
+    return idx > pickupIdxInStops;
+  });
 
   /* ---------------- STATES ---------------- */
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -74,6 +93,9 @@ const SeatSelection = ({ route }) => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [dropType, setDropType] = useState('main'); // 'main' or 'stop'
   const [selectedStopId, setSelectedStopId] = useState(null);
+  const [currentAvail, setCurrentAvail] = useState(rideData?.available_seats || totalCount);
+
+  const seats = getSeats(currentAvail);
 
   React.useEffect(() => {
     AsyncStorage.getItem('user_data').then(data => {
@@ -96,17 +118,21 @@ const SeatSelection = ({ route }) => {
 
       // Determine final drop point
       let finalDrop = searchDrop || rideData.drop_point;
-      if (dropType === 'stop' && selectedStopId) {
-        const stop = rideData.stop_points.find(s => s.id === selectedStopId);
-        if (stop) finalDrop = stop.city_name;
+      let finalStopId = null;
+
+      if (dropType === 'stop' && selectedStopId !== null && rideData.stop_availabilities) {
+        const stop = rideData.stop_availabilities[selectedStopId];
+        if (stop) {
+          finalDrop = stop.city_name;
+          // Final Stop ID might not be available in simple search results, 
+          // but the backend uses the string names to match the segment.
+        }
       }
 
       const payload = {
         seats: selectedSeats.length,
-        special_requests: "", // Default empty
+        special_requests: "",
         payment_method: paymentMode,
-        stop_point_id: dropType === 'stop' ? selectedStopId : null,
-        drop_point_type: dropType,
         pickup_point: searchPickup || rideData.pickup_point,
         drop_point: finalDrop
       };
@@ -255,9 +281,13 @@ const SeatSelection = ({ route }) => {
 
   /* ---------------- PRICE CALCULATION ---------------- */
   let currentPricePerSeat = pricePerSeat;
-  if (dropType === 'stop' && selectedStopId) {
-    const stop = rideData.stop_points.find(s => s.id === selectedStopId);
-    if (stop) currentPricePerSeat = parseFloat(stop.price_from_pickup);
+  if (dropType === 'stop' && selectedStopId !== null && rideData?.stop_availabilities) {
+    const stop = rideData.stop_availabilities[selectedStopId];
+    if (stop) currentPricePerSeat = parseFloat(stop.price);
+  } else if (dropType === 'main' && rideData?.stop_availabilities) {
+    // Find main drop in stop_availabilities for safety
+    const mainStop = rideData.stop_availabilities.find(s => normalizeCity(s.city_name) === normalizeCity(searchDrop || rideData.drop_point));
+    if (mainStop) currentPricePerSeat = parseFloat(mainStop.price);
   }
 
   const totalPrice = selectedSeats.length * currentPricePerSeat;
@@ -270,7 +300,7 @@ const SeatSelection = ({ route }) => {
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.locationBox}>
           <Text style={styles.locationText}>
-            {rideData ? `${rideData.from || rideData.pickup_point || ''} → ${rideData.to || rideData.drop_point || ''}` : 'Bus Booking'}
+            {rideData ? `${(searchPickup || rideData.pickup_point || '').split(',')[0]} → ${(searchDrop || rideData.drop_point || '').split(',')[0]}` : 'Ride Selection'}
           </Text>
           <Icon name="bell-outline" size={24} color="#248907" />
         </View>
@@ -298,30 +328,62 @@ const SeatSelection = ({ route }) => {
         <View style={styles.destinationCard}>
           <Text style={styles.destLabel}>Select Drop Point:</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
-            {/* Main Destination */}
-            <TouchableOpacity
-              style={[styles.destPill, dropType === 'main' && styles.destPillActive]}
-              onPress={() => { setDropType('main'); setSelectedStopId(null); }}
-            >
-              <Icon name="map-marker" size={16} color={dropType === 'main' ? '#fff' : '#248907'} />
-              <Text style={[styles.destText, dropType === 'main' && { color: '#fff' }]}>
-                {rideData?.drop_point?.split(',')[0]} (₹{pricePerSeat})
-              </Text>
-            </TouchableOpacity>
+            {/* We'll use stop_availabilities if provided by backend, it's more accurate */}
+            {(rideData?.stop_availabilities || []).length > 0 ? (
+              (rideData.stop_availabilities).map((stop, idx) => {
+                const isMain = normalizeCity(stop.city_name) === normalizeCity(searchDrop || rideData.drop_point);
+                const isActive = isMain ? dropType === 'main' : (selectedStopId === idx);
 
-            {/* Stop Points */}
-            {rideData?.stop_points?.map((stop) => (
-              <TouchableOpacity
-                key={stop.id}
-                style={[styles.destPill, dropType === 'stop' && selectedStopId === stop.id && styles.destPillActive]}
-                onPress={() => { setDropType('stop'); setSelectedStopId(stop.id); }}
-              >
-                <Icon name="map-marker-outline" size={16} color={selectedStopId === stop.id ? '#fff' : '#555'} />
-                <Text style={[styles.destText, selectedStopId === stop.id && { color: '#fff' }]}>
-                  {stop.city_name?.split(',')[0]} (₹{stop.price_from_pickup})
-                </Text>
-              </TouchableOpacity>
-            ))}
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[styles.destPill, isActive && styles.destPillActive]}
+                    onPress={() => {
+                      if (isMain) {
+                        setDropType('main');
+                        setSelectedStopId(null);
+                      } else {
+                        setDropType('stop');
+                        setSelectedStopId(idx); // uses index as ID for stop_availabilities
+                      }
+                      setCurrentAvail(stop.available_seats);
+                      setSelectedSeats([]); // Clear selected seats when switching segment
+                    }}
+                  >
+                    <Icon name="map-marker" size={16} color={isActive ? '#fff' : '#248907'} />
+                    <Text style={[styles.destText, isActive && { color: '#fff' }]}>
+                      {stop.city_name?.split(',')[0]} (₹{stop.price})
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <>
+                {/* Fallback to old UI if stop_availabilities not present */}
+                <TouchableOpacity
+                  style={[styles.destPill, dropType === 'main' && styles.destPillActive]}
+                  onPress={() => { setDropType('main'); setSelectedStopId(null); }}
+                >
+                  <Icon name="map-marker" size={16} color={dropType === 'main' ? '#fff' : '#248907'} />
+                  <Text style={[styles.destText, dropType === 'main' && { color: '#fff' }]}>
+                    {(searchDrop || rideData?.drop_point)?.split(',')[0]} (₹{pricePerSeat})
+                  </Text>
+                </TouchableOpacity>
+
+                {(validStops || []).map((stop) => (
+                  <TouchableOpacity
+                    key={stop.id}
+                    style={[styles.destPill, dropType === 'stop' && selectedStopId === stop.id && styles.destPillActive]}
+                    onPress={() => { setDropType('stop'); setSelectedStopId(stop.id); }}
+                  >
+                    <Icon name="map-marker-outline" size={16} color={selectedStopId === stop.id ? '#fff' : '#555'} />
+                    <Text style={[styles.destText, selectedStopId === stop.id && { color: '#fff' }]}>
+                      {stop.city_name?.split(',')[0]} (₹{stop.price_from_pickup})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
           </ScrollView>
         </View>
 
@@ -330,7 +392,7 @@ const SeatSelection = ({ route }) => {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
             {seats.map((s) => (
               <View key={s.id} style={{ margin: 10 }}>
-                {renderSeat(s, selectedSeats, handleSelectSeat)}
+                {renderSeat(s, selectedSeats, handleSelectSeat, currentPricePerSeat)}
               </View>
             ))}
           </View>

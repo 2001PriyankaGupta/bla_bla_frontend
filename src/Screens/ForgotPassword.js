@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
 import {
     View,
@@ -27,6 +27,29 @@ const ForgotPassword = () => {
     const [code, setCode] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [timer, setTimer] = useState(0);
+    const [isFocused, setIsFocused] = useState(false);
+    const codeRef = useRef();
+
+    useEffect(() => {
+        let interval;
+        if (timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [timer]);
+
+    useEffect(() => {
+        if (step === 2) {
+            setTimeout(() => {
+                codeRef.current?.focus();
+            }, 500);
+        }
+    }, [step]);
 
     const handleSendCode = async () => {
         if (!email) {
@@ -36,26 +59,48 @@ const ForgotPassword = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${BASE_URL}auth/forgot-password`, { email });
+            const url = `${BASE_URL}auth/forgot-password`;
+            console.log("Calling Forgot Password URL:", url);
+            const response = await axios.post(url, { email });
             console.log("Forgot Password Response:", response.data);
 
             if (response.data.status === 'true' || response.status === 200) {
                 Alert.alert("Success", response.data.message);
                 setStep(2);
+                setTimer(60);
             } else {
                 Alert.alert("Error", response.data.message || "Something went wrong");
             }
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                await AsyncStorage.removeItem('access_token');
-                await AsyncStorage.removeItem('user_data');
-                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-                return;
-            }
-
             console.error("Forgot Password Error:", error);
-            const msg = error.response?.data?.message || "Failed to send code";
+            let msg = "Something went wrong.";
+            if (error.response) {
+                msg = error.response.data.message || "Server Error";
+            } else if (error.request) {
+                msg = "Network Error: Could not reach server (" + BASE_URL + ")";
+            }
             Alert.alert("Error", msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendCode = async () => {
+        if (timer > 0) return;
+        setLoading(true);
+        try {
+            const response = await axios.post(`${BASE_URL}auth/forgot-password`, { email });
+            if (response.data.status === 'true' || response.status === 200) {
+                setTimer(60);
+                setCode('');
+                setTimeout(() => {
+                    codeRef.current?.focus();
+                }, 500);
+            } else {
+                Alert.alert("Error", response.data.message || "Failed to resend code.");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Failed to resend code.");
         } finally {
             setLoading(false);
         }
@@ -77,15 +122,13 @@ const ForgotPassword = () => {
                 Alert.alert("Error", response.data.message || "Invalid code");
             }
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                await AsyncStorage.removeItem('access_token');
-                await AsyncStorage.removeItem('user_data');
-                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-                return;
+            let msg = "The verification code is incorrect.";
+            if (error.response && error.response.data && error.response.data.message) {
+                msg = error.response.data.message;
+            } else if (error.message) {
+                msg = "Could not verify code. Please check your internet.";
             }
-
-            console.error("Verify Code Error:", error);
-            Alert.alert("Error", "Invalid code");
+            Alert.alert("Invalid OTP", msg);
         } finally {
             setLoading(false);
         }
@@ -112,21 +155,26 @@ const ForgotPassword = () => {
 
             if (response.data.status === 'true') {
                 Alert.alert("Success", "Password reset successfully!", [
-                    { text: "Login", onPress: () => navigation.navigate('LoginDetails') }
+                    {
+                        text: "Login", onPress: () => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
+                        }
+                    }
                 ]);
             } else {
                 Alert.alert("Error", response.data.message || "Failed to reset password");
             }
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                await AsyncStorage.removeItem('access_token');
-                await AsyncStorage.removeItem('user_data');
-                navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-                return;
+            let msg = "We could not reset your password. Please try again.";
+            if (error.response && error.response.data && error.response.data.message) {
+                msg = error.response.data.message;
+            } else if (error.message) {
+                msg = "Network Error. Please try again.";
             }
-
-            console.error("Reset Password Error:", error);
-            Alert.alert("Error", "Failed to reset password");
+            Alert.alert("Reset Failed", msg);
         } finally {
             setLoading(false);
         }
@@ -174,16 +222,42 @@ const ForgotPassword = () => {
                         <Text style={styles.title}>Enter Code</Text>
                         <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
 
-                        <View style={styles.inputBox}>
-                            <Icon name="lock-outline" size={22} color="#000" />
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            style={styles.otpContainer}
+                            onPress={() => codeRef.current?.focus()}
+                        >
+                            {[...Array(6)].map((_, index) => {
+                                const digit = code[index] || '';
+                                const isCurrent = index === code.length;
+                                const isActive = isCurrent && isFocused;
+                                return (
+                                    <View key={index} style={[styles.otpBox, isActive && styles.otpBoxActive]}>
+                                        <Text style={styles.otpText}>{digit}</Text>
+                                        {isActive && <View style={styles.cursor} />}
+                                    </View>
+                                );
+                            })}
                             <TextInput
-                                placeholder="Reset Code"
-                                placeholderTextColor="#777"
-                                style={styles.input}
+                                ref={codeRef}
                                 value={code}
                                 onChangeText={setCode}
-                                keyboardType="default" // or number-pad if strictly numeric
+                                maxLength={6}
+                                keyboardType="number-pad"
+                                style={styles.hiddenInput}
+                                onFocus={() => setIsFocused(true)}
+                                onBlur={() => setIsFocused(false)}
                             />
+                        </TouchableOpacity>
+
+                        <View style={styles.resendContainer}>
+                            {timer > 0 ? (
+                                <Text style={styles.resendText}>Resend code in {timer}s</Text>
+                            ) : (
+                                <TouchableOpacity onPress={handleResendCode}>
+                                    <Text style={[styles.resendText, { textDecorationLine: 'underline', color: '#248907' }]}>Resend Code</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         <TouchableOpacity style={styles.button} onPress={handleVerifyCode} disabled={loading}>
@@ -205,8 +279,11 @@ const ForgotPassword = () => {
                                 style={styles.input}
                                 value={password}
                                 onChangeText={setPassword}
-                                secureTextEntry
+                                secureTextEntry={!showPassword}
                             />
+                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                <Icon name={showPassword ? "eye" : "eye-off"} size={22} color="#777" />
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.inputBox}>
@@ -217,8 +294,11 @@ const ForgotPassword = () => {
                                 style={styles.input}
                                 value={passwordConfirm}
                                 onChangeText={setPasswordConfirm}
-                                secureTextEntry
+                                secureTextEntry={!showConfirmPassword}
                             />
+                            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                <Icon name={showConfirmPassword ? "eye" : "eye-off"} size={22} color="#777" />
+                            </TouchableOpacity>
                         </View>
                         <TouchableOpacity style={styles.button} onPress={handleResetPassword} disabled={loading}>
                             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
@@ -306,6 +386,52 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#fff',
+    },
+    otpContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 30,
+    },
+    otpBox: {
+        width: 48,
+        height: 55,
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f9f9f9',
+    },
+    otpBoxActive: {
+        borderColor: '#248907',
+        borderWidth: 2,
+    },
+    otpText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#248907',
+    },
+    hiddenInput: {
+        position: 'absolute',
+        width: 1,
+        height: 1,
+        opacity: 0,
+    },
+    resendContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    resendText: {
+        fontSize: 16,
+        color: '#666',
+        fontWeight: '600',
+    },
+    cursor: {
+        position: 'absolute',
+        width: 2,
+        height: 24,
+        backgroundColor: '#248907',
     }
 });
 

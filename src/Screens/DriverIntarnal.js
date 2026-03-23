@@ -19,7 +19,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, IMG_URL } from '../config/config';
-import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DriverIntarnal = () => {

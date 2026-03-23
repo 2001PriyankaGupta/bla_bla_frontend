@@ -41,6 +41,8 @@ const MyRidedetails = () => {
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [loadingCoords, setLoadingCoords] = useState(true);
+  const [distance, setDistance] = useState(null);
+  const [duration, setDuration] = useState(null);
   const mapRef = React.useRef(null);
   // ─────────────────────────────────────────────────────────────
 
@@ -187,6 +189,8 @@ const MyRidedetails = () => {
                   strokeWidth={4}
                   strokeColor="#248907"
                   onReady={(result) => {
+                    setDistance(result.distance.toFixed(1));
+                    setDuration(Math.ceil(result.duration));
                     mapRef.current?.fitToCoordinates(result.coordinates, {
                       edgePadding: { right: scale(30), bottom: scale(30), left: scale(30), top: scale(30) }
                     });
@@ -203,16 +207,23 @@ const MyRidedetails = () => {
           />
         )}
 
-        {/* Map overlay: short location name */}
+        {/* Map overlay: short location name + distance */}
         <View style={styles.mapOverlay}>
-          <Icon name="map-marker" size={14} color="#248907" style={{ marginRight: scale(4) }} />
-          <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
-            {getShortPlace(trip_summary?.pickup_point)}
-          </Text>
-          <Text style={{ color: '#888', marginHorizontal: scale(4) }}>→</Text>
-          <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
-            {getShortPlace(trip_summary?.drop_point)}
-          </Text>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="map-marker" size={14} color="#248907" style={{ marginRight: scale(4) }} />
+            <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
+              {getShortPlace(trip_summary?.pickup_point)}
+            </Text>
+            <Text style={{ color: '#888', marginHorizontal: scale(4) }}>→</Text>
+            <Text style={styles.mapOverlayText} numberOfLines={1} ellipsizeMode="tail">
+              {getShortPlace(trip_summary?.drop_point)}
+            </Text>
+          </View>
+          {distance && (
+            <View style={styles.distanceBadge}>
+              <Text style={styles.distanceText}>{distance} km</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -432,5 +443,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: responsiveFontSize(15)
+  },
+  distanceBadge: {
+    backgroundColor: '#248907',
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(15),
+    marginLeft: scale(10),
+  },
+  distanceText: {
+    color: '#fff',
+    fontSize: responsiveFontSize(11),
+    fontWeight: '700',
   },
 });

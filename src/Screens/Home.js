@@ -180,7 +180,7 @@ const Home = ({ route }) => {
                 </View>
 
                 <Text style={styles.routeText} numberOfLines={2}>
-                  {shortLocation(ride.pickup_point)} → {shortLocation(ride.drop_point)}
+                  {(ride.search_segment?.pickup || ride.pickup_point)} → {(ride.search_segment?.drop || ride.drop_point)}
                 </Text>
 
                 {/* ── Stop Points (Intermediate Cities) ── */}

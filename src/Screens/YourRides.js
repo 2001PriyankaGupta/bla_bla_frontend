@@ -106,13 +106,15 @@ const YourRides = () => {
   };
 
   // userType: 'driver' ya 'passenger'
-  const handleCancel = async (bookingId, userType) => {
+  const handleCancel = async (bookingId, userType, currentStatus) => {
     const isDriver = userType === 'driver';
+    const isConfirmed = currentStatus?.toLowerCase() === 'confirmed';
+
     Alert.alert(
-      isDriver ? 'Reject Booking' : 'Cancel Ride',
-      isDriver
-        ? 'Are you sure you want to reject/cancel this booking?'
-        : 'Are you sure you want to cancel this ride?',
+      isDriver ? (isConfirmed ? 'Cancel Confirmed Booking' : 'Reject Booking') : 'Cancel Ride',
+      isConfirmed
+        ? 'Are you sure you want to cancel this confirmed booking?'
+        : (isDriver ? 'Are you sure you want to reject this booking?' : 'Are you sure you want to cancel this ride?'),
       [
         { text: 'No', style: 'cancel' },
         {
@@ -460,7 +462,7 @@ const YourRides = () => {
                     <View style={{ flex: 1 }}>
                       {/* Route */}
                       <Text style={styles.routeText} numberOfLines={1}>
-                        {item.location || '—'} → {item.destination || '—'}
+                        {(item.pickup_point || item.location || item.pickup_location)?.split(',')[0]} → {(item.drop_point || item.destination || item.drop_location)?.split(',')[0]}
                       </Text>
 
                       {/* Date & Time & Seats */}
@@ -561,7 +563,7 @@ const YourRides = () => {
                     {isUpcoming && (
                       <TouchableOpacity
                         style={styles.cancelBtn}
-                        onPress={() => handleCancel(item.id, item.user_type)}
+                        onPress={() => handleCancel(item.id, item.user_type, item.status)}
                       >
                         <Icon name="close" size={15} color="#fff" />
                         <Text style={styles.cancelBtnText}>

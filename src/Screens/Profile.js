@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { BASE_URL, IMG_URL } from '../config/config';
-import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+
 import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = () => {

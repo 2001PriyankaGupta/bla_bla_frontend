@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_URL, GOOGLE_MAPS_API_KEY } from '../config/config';
 import DatePicker from 'react-native-date-picker';
-import { scale, verticalScale, moderateScale, responsiveFontSize } from '../utils/Responsive';
+
 
 const OfferRide = () => {
   const navigation = useNavigation();

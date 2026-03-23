@@ -22,10 +22,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-native-date-picker';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import GetLocation from 'react-native-get-location';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
+import { Keyboard } from 'react-native';
 
 const RideBookingPage = () => {
   const navigation = useNavigation();
@@ -62,6 +63,68 @@ const RideBookingPage = () => {
   // Autocomplete State
   const [fromSuggestions, setFromSuggestions] = React.useState([]);
   const [toSuggestions, setToSuggestions] = React.useState([]);
+  const [recentLocations, setRecentLocations] = React.useState([]);
+  const [focusedInput, setFocusedInput] = React.useState(null);
+
+  const loadRecentLocations = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      let locationsSet = new Set();
+      let locations = [];
+
+      // Fetch Past Bookings History from Server (Like Uber)
+      if (token) {
+        try {
+          const resp = await axios.get(`${BASE_URL}my-bookings`, { headers: { Authorization: `Bearer ${token}` } });
+          // Backend returns { status: true, data: { bookings: [...] } }
+          if (resp.data?.status === true && resp.data.data?.bookings) {
+            resp.data.data.bookings.forEach(booking => {
+              if (booking.location && booking.location !== 'N/A') locationsSet.add(booking.location);
+              if (booking.destination && booking.destination !== 'N/A') locationsSet.add(booking.destination);
+            });
+          }
+        } catch (err) {
+          console.warn('Could not fetch booking history', err);
+        }
+      }
+
+      // Merge with Local Current Device Searches
+      const stored = await AsyncStorage.getItem('@recent_locations');
+      if (stored) {
+        let localLocs = [];
+        try {
+          localLocs = JSON.parse(stored);
+        } catch (e) { }
+
+        localLocs.forEach(loc => {
+          // Support both old object format and new string format
+          const parseLoc = typeof loc === 'string' ? loc : loc?.description;
+          if (parseLoc) locationsSet.add(parseLoc);
+        });
+      }
+
+      // Format for UI
+      locations = Array.from(locationsSet).slice(0, 8).map(loc => ({ description: loc, isRecent: true }));
+      setRecentLocations(locations);
+
+    } catch (e) {
+      console.error("Failed to load recent locations", e);
+    }
+  };
+
+  const saveRecentLocation = async (address) => {
+    if (!address) return;
+    try {
+      let stored = await AsyncStorage.getItem('@recent_locations');
+      let localLocs = stored ? JSON.parse(stored) : [];
+      localLocs = localLocs.filter(loc => loc !== address);
+      localLocs.unshift(address);
+      if (localLocs.length > 5) localLocs = localLocs.slice(0, 5);
+      await AsyncStorage.setItem('@recent_locations', JSON.stringify(localLocs));
+      // Reload in background so the list is updated
+      loadRecentLocations();
+    } catch (e) { }
+  };
 
   // Date Picker State
   const [date, setDate] = React.useState(new Date());
@@ -191,24 +254,20 @@ const RideBookingPage = () => {
       };
       getUserData();
       fetchUnreadCount();
+      loadRecentLocations();
     }, [])
   );
 
   const fetchSuggestions = async (query, type) => {
-    if (query.length < 3) {
-      if (type === 'from') setFromSuggestions([]);
-      if (type === 'to') setToSuggestions([]);
+    // Show recent history if query is empty or too short (Like Uber's Click behavior)
+    if (!query || query.length < 2) {
+      if (type === 'from') setFromSuggestions(recentLocations);
+      if (type === 'to') setToSuggestions(recentLocations);
       return;
     }
 
     try {
-      // 1. Fetch from our Database (Active Routes)
-      const dbResponse = await axios.get(`${BASE_URL}locations/suggestions`, {
-        params: { query: query }
-      });
-      const dbSuggestions = dbResponse.data.predictions || [];
-
-      // 2. Fetch from Google
+      // Fetch from Google
       const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
         params: {
           input: query,
@@ -218,13 +277,10 @@ const RideBookingPage = () => {
       });
       const googleSuggestions = response.data.predictions || [];
 
-      // Combine: DB suggestions first (they represent actual rides)
-      const combined = [...dbSuggestions, ...googleSuggestions];
-
       if (type === 'from') {
-        setFromSuggestions(combined);
+        setFromSuggestions(googleSuggestions);
       } else {
-        setToSuggestions(combined);
+        setToSuggestions(googleSuggestions);
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -240,12 +296,20 @@ const RideBookingPage = () => {
 
   const handleSelectSuggestion = async (item, type) => {
     const address = item.description;
+
+    // Dismiss keyboard and clear suggestions first to avoid overlaps
+    Keyboard.dismiss();
+    setFocusedInput(null);
+    setFromSuggestions([]);
+    setToSuggestions([]);
+
+    // Save to Local history immediately
+    saveRecentLocation(address);
+
     if (type === 'from') {
       setFrom(address);
-      setFromSuggestions([]);
     } else {
       setTo(address);
-      setToSuggestions([]);
     }
 
     try {
@@ -254,17 +318,24 @@ const RideBookingPage = () => {
 
       if (response.data.results && response.data.results.length > 0) {
         const { lat, lng } = response.data.results[0].geometry.location;
-        const newRegion = {
+        const newCoords = {
           latitude: lat,
           longitude: lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
         };
-        setRegion(newRegion);
+
         if (type === 'from') {
-          setFromMarker({ latitude: lat, longitude: lng });
+          setFromMarker(newCoords);
         } else {
-          setToMarker({ latitude: lat, longitude: lng });
+          setToMarker(newCoords);
+        }
+
+        // Smoothly animate map to the new location instead of forcing region prop
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            ...newCoords,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }, 1000);
         }
       }
     } catch (error) {
@@ -281,6 +352,9 @@ const RideBookingPage = () => {
 
   const handleSearch = async () => {
     try {
+      if (from) saveRecentLocation(from);
+      if (to) saveRecentLocation(to);
+
       const response = await axios.post(`${BASE_URL}search-ride`, {
         from,
         to,
@@ -306,6 +380,32 @@ const RideBookingPage = () => {
 
       Alert.alert('Error', 'Failed to search rides.');
     }
+  };
+
+  const renderSuggestionItem = (item, type) => {
+    const isRecent = item.isRecent;
+    const descString = typeof item.description === 'string' ? item.description : String(item.description || '');
+
+    // Split address for Uber-like Title and Subtitle
+    const parts = descString.split(',');
+    const title = parts[0]?.trim() || '';
+    const subtitle = parts.slice(1).join(',').trim();
+
+    return (
+      <TouchableOpacity
+        key={item.place_id || descString + Math.random()}
+        style={styles.suggestionItem}
+        onPress={() => handleSelectSuggestion(item, type)}
+      >
+        <View style={styles.suggestionIconWrapper}>
+          <Icon name={isRecent ? "history" : "map-marker-outline"} size={22} color={isRecent ? "#777" : "#1fa000"} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.suggestionTitle} numberOfLines={1}>{title}</Text>
+          {subtitle ? <Text style={styles.suggestionSubText} numberOfLines={1}>{subtitle}</Text> : null}
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -335,8 +435,9 @@ const RideBookingPage = () => {
               <View style={styles.row}>
                 <TextInput
                   placeholder="Pickup Point"
-                  style={styles.input}
+                  style={[styles.input, focusedInput === 'from' && { borderColor: '#1fa000', borderWidth: 1.5 }]}
                   value={from}
+                  onFocus={() => { setFocusedInput('from'); fetchSuggestions(from, 'from'); }}
                   onChangeText={(text) => { setFrom(text); fetchSuggestions(text, 'from'); }}
                 />
                 <TouchableOpacity style={styles.locationBtn} onPress={getCurrentLocation} disabled={loadingLocation}>
@@ -349,15 +450,10 @@ const RideBookingPage = () => {
                   <Icon name="swap-vertical" size={scale(22)} color="#fff" />
                 </TouchableOpacity>
               </View>
-              {fromSuggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <ScrollView keyboardShouldPersistTaps="always">
-                    {fromSuggestions.map((item, index) => (
-                      <TouchableOpacity key={index} style={styles.suggestionItem} onPress={() => handleSelectSuggestion(item, 'from')}>
-                        <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                        <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                      </TouchableOpacity>
-                    ))}
+              {focusedInput === 'from' && fromSuggestions.length > 0 && (
+                <View style={[styles.suggestionsContainer, { zIndex: 9999 }]}>
+                  <ScrollView keyboardShouldPersistTaps="always" nestedScrollEnabled={true}>
+                    {fromSuggestions.map((item, index) => renderSuggestionItem(item, 'from'))}
                   </ScrollView>
                 </View>
               )}
@@ -367,19 +463,15 @@ const RideBookingPage = () => {
             <View style={{ zIndex: 10, marginBottom: 10 }}>
               <TextInput
                 placeholder="Drop Point"
-                style={styles.input}
+                style={[styles.input, focusedInput === 'to' && { borderColor: '#1fa000', borderWidth: 1.5 }]}
                 value={to}
+                onFocus={() => { setFocusedInput('to'); fetchSuggestions(to, 'to'); }}
                 onChangeText={(text) => { setTo(text); fetchSuggestions(text, 'to'); }}
               />
-              {toSuggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <ScrollView keyboardShouldPersistTaps="always">
-                    {toSuggestions.map((item, index) => (
-                      <TouchableOpacity key={index} style={styles.suggestionItem} onPress={() => handleSelectSuggestion(item, 'to')}>
-                        <Icon name="map-marker-outline" size={16} color="#555" style={{ marginRight: 8 }} />
-                        <Text style={styles.suggestionText} numberOfLines={2}>{item.description}</Text>
-                      </TouchableOpacity>
-                    ))}
+              {focusedInput === 'to' && toSuggestions.length > 0 && (
+                <View style={[styles.suggestionsContainer, { zIndex: 9999 }]}>
+                  <ScrollView keyboardShouldPersistTaps="always" nestedScrollEnabled={true}>
+                    {toSuggestions.map((item, index) => renderSuggestionItem(item, 'to'))}
                   </ScrollView>
                 </View>
               )}
@@ -412,8 +504,14 @@ const RideBookingPage = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.mapContainer}>
-            <MapView ref={mapRef} style={styles.map} region={region} onRegionChangeComplete={setRegion}>
+          <View style={[styles.mapContainer, { height: verticalScale(220) }]}>
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              provider={PROVIDER_GOOGLE}
+              initialRegion={region}
+              onRegionChangeComplete={(reg) => setRegion(reg)}
+            >
               {fromMarker && <Marker coordinate={fromMarker} title="From" pinColor="green" />}
               {toMarker && <Marker coordinate={toMarker} title="To" pinColor="red" />}
               {fromMarker && toMarker && (
@@ -464,7 +562,7 @@ const styles = StyleSheet.create({
   headerContainer: { width: '100%', height: verticalScale(220), justifyContent: 'center', alignItems: 'center' },
   bgImage: { width: '100%', height: verticalScale(240), position: 'absolute', resizeMode: 'cover' },
   title: { color: '#fff', fontSize: responsiveFontSize(22), fontWeight: '700', textAlign: 'center', marginTop: verticalScale(20) },
-  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: verticalScale(-40), borderRadius: moderateScale(15), padding: moderateScale(20), elevation: 10 },
+  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: verticalScale(-40), borderRadius: moderateScale(15), padding: moderateScale(20), elevation: 15, zIndex: 100 },
   label: { fontSize: responsiveFontSize(13), color: '#555', marginBottom: verticalScale(5) },
   row: { flexDirection: 'row', alignItems: 'center' },
   input: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: moderateScale(10), height: verticalScale(45), paddingHorizontal: scale(10), marginBottom: verticalScale(10) },
@@ -478,9 +576,52 @@ const styles = StyleSheet.create({
   mapContainer: { width: '90%', height: verticalScale(180), borderRadius: moderateScale(12), alignSelf: 'center', marginTop: verticalScale(25), overflow: 'hidden', elevation: 5, backgroundColor: '#eee' },
   bottomBar: { position: 'absolute', bottom: verticalScale(20), left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: '#1fa000', paddingVertical: verticalScale(10), marginHorizontal: scale(40), borderRadius: moderateScale(30), elevation: 10 },
   bottomText: { color: '#fff', fontSize: responsiveFontSize(12), textAlign: 'center', marginTop: verticalScale(4) },
-  suggestionsContainer: { position: 'absolute', top: verticalScale(50), left: 0, right: 0, backgroundColor: '#fff', borderRadius: moderateScale(8), elevation: 20, zIndex: 1000, maxHeight: verticalScale(200), borderWidth: 1, borderColor: '#ddd' },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: moderateScale(12), borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+
+  suggestionsContainer: {
+    position: 'absolute',
+    top: verticalScale(50),
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(12),
+    elevation: 25,
+    zIndex: 9999,
+    maxHeight: verticalScale(300),
+    borderWidth: 1,
+    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 15,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: moderateScale(15),
+    borderBottomWidth: 1,
+    borderBottomColor: '#f8f8f8'
+  },
+  suggestionIconWrapper: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scale(15)
+  },
+  suggestionTitle: {
+    fontSize: responsiveFontSize(15),
+    color: '#333',
+    fontWeight: 'bold'
+  },
+  suggestionSubText: {
+    fontSize: responsiveFontSize(12),
+    color: '#888',
+    marginTop: 2
+  },
   suggestionText: { fontSize: responsiveFontSize(14), color: '#333', flex: 1 },
+
   locationBtn: { paddingHorizontal: scale(10), justifyContent: 'center', alignItems: 'center', height: verticalScale(45), marginBottom: verticalScale(10) },
   bellButton: {
     position: 'absolute',
