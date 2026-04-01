@@ -249,10 +249,7 @@ const LoginDetails = () => {
 
             <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
-                <Image source={require('../asset/Image/google.png')} style={styles.socialIcon} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
-                <Image source={require('../asset/Image/apple.png')} style={styles.socialIcon} />
+                <Image source={require('../asset/Image/google_new.png')} style={styles.socialIcon} />
               </TouchableOpacity>
             </View>
 
@@ -378,8 +375,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   socialIcon: {
-    width: scale(30),
-    height: scale(30),
+    width: scale(36),
+    height: scale(36),
     resizeMode: 'contain',
   },
   modalBg: {

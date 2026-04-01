@@ -412,7 +412,7 @@ const RideBookingPage = () => {
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#1fa000" translucent={false} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
+        <View style={{ flex: 1 }}>
           <View style={styles.headerContainer}>
             <Image source={require('../asset/Image/Ellipse.png')} style={styles.bgImage} />
             <TouchableOpacity
@@ -435,7 +435,7 @@ const RideBookingPage = () => {
               <View style={styles.row}>
                 <TextInput
                   placeholder="Pickup Point"
-                  style={[styles.input, focusedInput === 'from' && { borderColor: '#1fa000', borderWidth: 1.5 }]}
+                  style={[styles.input, { flex: 1 }, focusedInput === 'from' && { borderColor: '#1fa000', borderWidth: 1.5 }]}
                   value={from}
                   onFocus={() => { setFocusedInput('from'); fetchSuggestions(from, 'from'); }}
                   onChangeText={(text) => { setFrom(text); fetchSuggestions(text, 'from'); }}
@@ -504,7 +504,7 @@ const RideBookingPage = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.mapContainer, { height: verticalScale(220) }]}>
+          <View style={[styles.mapContainer, { height: verticalScale(220), marginBottom: verticalScale(80) }]}>
             <MapView
               ref={mapRef}
               style={styles.map}
@@ -530,7 +530,7 @@ const RideBookingPage = () => {
               )}
             </MapView>
           </View>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       <View style={styles.bottomBar}>
@@ -562,10 +562,10 @@ const styles = StyleSheet.create({
   headerContainer: { width: '100%', height: verticalScale(220), justifyContent: 'center', alignItems: 'center' },
   bgImage: { width: '100%', height: verticalScale(240), position: 'absolute', resizeMode: 'cover' },
   title: { color: '#fff', fontSize: responsiveFontSize(22), fontWeight: '700', textAlign: 'center', marginTop: verticalScale(20) },
-  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: verticalScale(-40), borderRadius: moderateScale(15), padding: moderateScale(20), elevation: 15, zIndex: 100 },
+  card: { width: '85%', backgroundColor: '#fff', alignSelf: 'center', marginTop: verticalScale(-50), borderRadius: moderateScale(15), padding: moderateScale(15), elevation: 15, zIndex: 100 },
   label: { fontSize: responsiveFontSize(13), color: '#555', marginBottom: verticalScale(5) },
   row: { flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: moderateScale(10), height: verticalScale(45), paddingHorizontal: scale(10), marginBottom: verticalScale(10) },
+  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: moderateScale(10), height: verticalScale(45), paddingHorizontal: scale(10), marginBottom: verticalScale(10) },
   swapBtn: { backgroundColor: '#1fa000', width: scale(40), height: scale(40), borderRadius: scale(20), justifyContent: 'center', alignItems: 'center', marginLeft: scale(10) },
   smallRow: { flexDirection: 'row', justifyContent: 'space-between' },
   smallBox: { width: '48%' },
@@ -573,8 +573,8 @@ const styles = StyleSheet.create({
   searchBtn: { backgroundColor: '#1fa000', paddingVertical: verticalScale(14), borderRadius: moderateScale(10), marginTop: verticalScale(15) },
   searchText: { color: '#fff', fontSize: responsiveFontSize(16), fontWeight: '700', textAlign: 'center' },
   map: { width: '100%', height: '100%' },
-  mapContainer: { width: '90%', height: verticalScale(180), borderRadius: moderateScale(12), alignSelf: 'center', marginTop: verticalScale(25), overflow: 'hidden', elevation: 5, backgroundColor: '#eee' },
-  bottomBar: { position: 'absolute', bottom: verticalScale(20), left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: '#1fa000', paddingVertical: verticalScale(10), marginHorizontal: scale(40), borderRadius: moderateScale(30), elevation: 10 },
+  mapContainer: { width: '88%', height: verticalScale(180), borderRadius: moderateScale(12), alignSelf: 'center', marginTop: verticalScale(15), overflow: 'hidden', elevation: 5, backgroundColor: '#eee' },
+  bottomBar: { position: 'absolute', bottom: verticalScale(20), left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: '#1fa000', paddingVertical: verticalScale(10), marginHorizontal: scale(40), borderRadius: moderateScale(30), elevation: 10, marginBottom: verticalScale(25) },
   bottomText: { color: '#fff', fontSize: responsiveFontSize(12), textAlign: 'center', marginTop: verticalScale(4) },
 
   suggestionsContainer: {

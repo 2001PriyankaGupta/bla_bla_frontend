@@ -28,13 +28,13 @@ const Login = () => {
           style={styles.Imagelogo}
         />
 
-        <Text style={[styles.title, { top: verticalScale(80) + insets.top }]}>Only EV...</Text>
+        <Text style={[styles.title, { top: verticalScale(80) + insets.top }]}>ReNue EV</Text>
         <Text style={[styles.subtitle, { top: verticalScale(160) + insets.top }]}>
           Arrive in Silence. Leave a Lighter {'\n'}Footprint.
         </Text>
 
         <Image
-          source={require('../asset/Image/Car.png')}
+          source={require('../asset/Image/Car_New.png')}
           style={styles.car}
           resizeMode="contain"
         />
@@ -92,9 +92,10 @@ const styles = StyleSheet.create({
     lineHeight: verticalScale(26),
   },
   car: {
-    width: scale(300),
-    height: verticalScale(160),
-    marginTop: verticalScale(-150),
+    width: scale(340),
+    height: verticalScale(200),
+    marginTop: verticalScale(-160),
+    backgroundColor: 'transparent',
   },
   title3: {
     fontSize: responsiveFontSize(22),
@@ -114,6 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: verticalScale(20),
   },
   text: {
     color: '#fff',

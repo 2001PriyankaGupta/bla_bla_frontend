@@ -123,14 +123,7 @@ const SignUp = () => {
       <View style={styles.socialRow}>
         <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
           <Image
-            source={require('../asset/Image/google.png')}
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.socialBtn}>
-          <Image
-            source={require('../asset/Image/apple.png')}
+            source={require('../asset/Image/google_new.png')}
             style={styles.socialIcon}
           />
         </TouchableOpacity>
@@ -218,8 +211,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   socialIcon: {
-    width: scale(32),
-    height: scale(32),
+    width: scale(36),
+    height: scale(36),
     resizeMode: 'contain',
   },
 
